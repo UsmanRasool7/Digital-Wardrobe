@@ -1,4 +1,4 @@
-# test_app
+# Digital Wardrobe
 
 A new Flutter project.
 
