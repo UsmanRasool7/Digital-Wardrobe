@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'screens/edit_profile_page.dart'; // Import the EditProfilePage
-
+import 'screens/edit_profile_page.dart';
+import 'screens/wardrobe_insights_page.dart';
 void main() {
   runApp(MyApp());
 }
@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: EditProfilePage(), // Set the EditProfilePage as the home screen
+      home: WardrobeInsightsScreen(), // Set the EditProfilePage as the home screen
       debugShowCheckedModeBanner: false,
     );
   }
