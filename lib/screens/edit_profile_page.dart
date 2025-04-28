@@ -92,8 +92,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  // Handle saving the profile changes (e.g., send data to backend)
-                  print('Save Changes');
+                  // Navigate to the PlannerPage
+                  Navigator.pushNamed(context, '/planner');
                 },
                 child: Text(
                   'Save Changes',
@@ -112,3 +112,4 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 }
+
