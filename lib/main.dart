@@ -5,10 +5,19 @@ import 'package:test_app/screens/signin.dart';
 import 'package:test_app/screens/signup.dart';
 import 'screens/edit_profile_page.dart';
 import 'screens/wardrobe_insights_page.dart';
+import 'package:provider/provider.dart';
+import 'services/auth_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        Provider<AuthService>(create: (_) => AuthService()),
+      ],
+      child:  MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -18,16 +27,16 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Profile Edit',
       routes: {
-        //'/': (context) => App(), // Your root widget
+        //'/': (context) => App(), // root widget
         '/login': (context) => LoginPage(),
         '/signup': (context) => SignUpPage(),
-        '/home': (context) => EditProfilePage(), // Add this line
+        '/home': (context) => EditProfilePage(),
       },
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: SignUpPage(), // Set the EditProfilePage as the home screen
+      home: SignInPage(),
       debugShowCheckedModeBanner: false,
     );
   }
