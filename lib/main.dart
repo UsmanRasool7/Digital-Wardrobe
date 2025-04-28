@@ -5,15 +5,12 @@ import 'package:test_app/screens/signin.dart';
 import 'package:test_app/screens/signup.dart';
 import 'screens/edit_profile_page.dart';
 import 'screens/wardrobe_insights_page.dart';
-<<<<<<< Updated upstream
 import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
-=======
 import 'screens/planner_page.dart';
 import 'screens/styling_page.dart';
 import 'screens/wardrobe_page.dart';
 
->>>>>>> Stashed changes
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
@@ -22,7 +19,7 @@ void main() async {
       providers: [
         Provider<AuthService>(create: (_) => AuthService()),
       ],
-      child:  MyApp(),
+      child: MyApp(),
     ),
   );
 }
@@ -33,10 +30,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Profile Edit',
       routes: {
-<<<<<<< Updated upstream
-        //'/': (context) => App(), // root widget
-=======
->>>>>>> Stashed changes
         '/login': (context) => LoginPage(),
         '/signup': (context) => SignUpPage(),
         '/home': (context) => EditProfilePage(),
@@ -45,11 +38,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-<<<<<<< Updated upstream
-      home: SignInPage(),
-=======
-      home: HomePage(),
->>>>>>> Stashed changes
+      home: SignUpPage(),
       debugShowCheckedModeBanner: false,
     );
   }
