@@ -1,6 +1,8 @@
+// lib/views/signup.dart
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../services/auth_service.dart'; // Update path as needed
+import '../services/auth_service.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -11,40 +13,36 @@ class SignUpPage extends StatefulWidget {
 
 class _SignUpPageState extends State<SignUpPage> {
   final _formKey = GlobalKey<FormState>();
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
+  final nameController            = TextEditingController();
+  final emailController           = TextEditingController();
+  final passwordController        = TextEditingController();
   final confirmPasswordController = TextEditingController();
-  final AuthService _authService = AuthService();
+  final AuthService _authService  = AuthService();
   bool _isLoading = false;
 
-  // Password match validation
-  bool _passwordsMatch() {
-    return passwordController.text == confirmPasswordController.text;
-  }
+  bool _passwordsMatch() =>
+      passwordController.text == confirmPasswordController.text;
 
-  // Handle signup
   Future<void> _handleSignUp() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
-
     try {
       await _authService.signUp(
         emailController.text.trim(),
         passwordController.text.trim(),
+        nameController.text.trim(),
       );
-      // Navigate to home after successful signup
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushReplacementNamed(context, '/signin');
     } on FirebaseAuthException catch (e) {
-      String errorMessage = "Signup failed. Please try again.";
+      String msg = "Signup failed. Please try again.";
       if (e.code == 'email-already-in-use') {
-        errorMessage = "Email already registered";
+        msg = "Email already registered";
       } else if (e.code == 'weak-password') {
-        errorMessage = "Password must be ≥6 characters";
+        msg = "Password must be ≥6 characters";
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(msg)));
     } finally {
       setState(() => _isLoading = false);
     }
@@ -67,8 +65,9 @@ class _SignUpPageState extends State<SignUpPage> {
               child: Form(
                 key: _formKey,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Back Button
+                    // Back Button + Title
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
                       child: const Row(
@@ -100,6 +99,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 6),
                     GestureDetector(
@@ -107,22 +107,44 @@ class _SignUpPageState extends State<SignUpPage> {
                       child: const Text(
                         'Have an account? Sign in Here',
                         style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.black,
-                            decoration: TextDecoration.underline
+                          fontSize: 18,
+                          color: Colors.black,
+                          decoration: TextDecoration.underline,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                     const SizedBox(height: 24),
 
-                    // Email Field
+                    // ── Name Field ─────────────────────────────────
+                    TextFormField(
+                      controller: nameController,
+                      validator: (v) =>
+                      v == null || v.trim().isEmpty
+                          ? 'Please enter your name'
+                          : null,
+                      style: const TextStyle(color: Colors.black),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
+                        hintText: 'Full Name*',
+                        hintStyle: const TextStyle(color: Colors.grey),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Colors.grey),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Email Field ────────────────────────────────
                     TextFormField(
                       controller: emailController,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
+                      validator: (v) {
+                        if (v == null || v.isEmpty) {
                           return 'Please enter an email';
                         }
-                        if (!value.contains('@')) {
+                        if (!v.contains('@')) {
                           return 'Invalid email format';
                         }
                         return null;
@@ -137,27 +159,19 @@ class _SignUpPageState extends State<SignUpPage> {
                           borderRadius: BorderRadius.circular(8),
                           borderSide: const BorderSide(color: Colors.grey),
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Colors.grey),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Colors.blue),
-                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
 
-                    // Password Field
+                    // ── Password Field ──────────────────────────────
                     TextFormField(
                       controller: passwordController,
                       obscureText: true,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
+                      validator: (v) {
+                        if (v == null || v.isEmpty) {
                           return 'Please enter a password';
                         }
-                        if (value.length < 6) {
+                        if (v.length < 6) {
                           return 'Password must be ≥6 characters';
                         }
                         return null;
@@ -168,29 +182,22 @@ class _SignUpPageState extends State<SignUpPage> {
                         fillColor: Colors.white,
                         hintText: 'Password*',
                         hintStyle: const TextStyle(color: Colors.grey),
-                        suffixIcon: const Icon(Icons.visibility_off, color: Colors.grey),
+                        suffixIcon:
+                        const Icon(Icons.visibility_off, color: Colors.grey),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: const BorderSide(color: Colors.grey),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Colors.grey),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Colors.blue),
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
 
-                    // Confirm Password Field
+                    // ── Confirm Password Field ──────────────────────
                     TextFormField(
                       controller: confirmPasswordController,
                       obscureText: true,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
+                      validator: (v) {
+                        if (v == null || v.isEmpty) {
                           return 'Please confirm password';
                         }
                         if (!_passwordsMatch()) {
@@ -202,43 +209,43 @@ class _SignUpPageState extends State<SignUpPage> {
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white,
-                        hintText: 'Confirm password*',
+                        hintText: 'Confirm Password*',
                         hintStyle: const TextStyle(color: Colors.grey),
-                        suffixIcon: const Icon(Icons.visibility_off, color: Colors.grey),
+                        suffixIcon:
+                        const Icon(Icons.visibility_off, color: Colors.grey),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: const BorderSide(color: Colors.grey),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Colors.grey),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Colors.blue),
                         ),
                       ),
                     ),
                     const SizedBox(height: 32),
 
-                    // Signup Button
+                    // ── Signup Button ───────────────────────────────
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _handleSignUp,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.limeAccent[400],
-                          foregroundColor: Colors.white,
+                          foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
                         ),
                         child: _isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
+                            ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
                             : const Text(
                           'Continue',
-                          style: TextStyle(fontSize: 16, color: Colors.black),
+                          style: TextStyle(fontSize: 16),
                         ),
                       ),
                     ),

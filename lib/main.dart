@@ -33,6 +33,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginPage(),
         '/signup': (context) => SignUpPage(),
         '/home': (context) => EditProfilePage(),
+        '/signin': (context) => SignInPage(),
       },
       theme: ThemeData(
         primarySwatch: Colors.blue,
