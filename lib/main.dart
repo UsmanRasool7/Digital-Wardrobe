@@ -4,7 +4,6 @@ import 'package:test_app/screens/login_page.dart';
 import 'package:test_app/screens/signin.dart';
 import 'package:test_app/screens/signup.dart';
 import 'screens/edit_profile_page.dart';
-import 'screens/wardrobe_insights_page.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
 import 'screens/planner_page.dart';
@@ -25,6 +24,8 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -39,13 +40,15 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: SignUpPage(),
+      home: SignInPage(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
   _HomePageState createState() => _HomePageState();
 }

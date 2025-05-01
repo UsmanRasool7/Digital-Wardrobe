@@ -8,16 +8,15 @@ import '../models/user_model.dart';
 class AuthService {
   final FirebaseAuth      _auth      = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
+  User? get currentUser => _auth.currentUser;
   /// Sign up with email/password and displayName,
   /// then write a corresponding Firestore document.
   Future<User?> signUp(
       String email,
       String password,
-      String displayName,      // ← new parameter
+      String username,
       ) async {
     try {
-      // 1. create the auth user
       UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -25,18 +24,14 @@ class AuthService {
 
       User user = result.user!;
 
-      // 2. update their FirebaseAuth profile
-      await user.updateDisplayName(displayName);
-
-      // 3. build your UserModel (photoUrl stays null)
       final newUser = UserModel(
         uid: user.uid,
-        displayName: displayName,
+        username: username,
         email: user.email!,
-        photoUrl: null,
+        profileImageUrl: null,
+        bio: '',
       );
 
-      // 4. write to Firestore at `users/{uid}`
       await _firestore
           .collection('users')
           .doc(newUser.uid)
@@ -48,6 +43,7 @@ class AuthService {
       return null;
     }
   }
+
 
   /// Login with email/password
   Future<User?> login(String email, String password) async {

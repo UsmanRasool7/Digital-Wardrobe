@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:test_app/widgets/profile_avatar.dart';
 
 class WardrobeInsightsScreen extends StatelessWidget {
+  const WardrobeInsightsScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
