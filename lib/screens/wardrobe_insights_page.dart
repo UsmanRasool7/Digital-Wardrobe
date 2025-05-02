@@ -1,13 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:test_app/repositories/user_repository.dart'; // Import your user repository
+import 'package:test_app/services/auth_service.dart'; // Assuming these services exist in your project
+import 'package:test_app/services/firestore_service.dart';
+import 'package:test_app/services/local_storage_service.dart';
 
-class WardrobeInsightsScreen extends StatelessWidget {
+class WardrobeInsightsScreen extends StatefulWidget {
   const WardrobeInsightsScreen({super.key});
+
+  @override
+  _WardrobeInsightsScreenState createState() => _WardrobeInsightsScreenState();
+}
+
+class _WardrobeInsightsScreenState extends State<WardrobeInsightsScreen> {
+  String displayName = '';
+
+  late UserRepository userRepository;
+
+  @override
+  void initState() {
+    super.initState();
+    userRepository = UserRepository(AuthService(), FirestoreService(), LocalStorageService());
+    _getUserDisplayName();
+  }
+
+  void _getUserDisplayName() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      print(user.uid);
+      final userModel = await userRepository.fetchUser();
+      if (userModel != null) {
+        setState(() {
+          displayName = userModel.username;
+        });
+      } else {
+        setState(() {
+          displayName = 'User'; // Default value if username is not found
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Taha\'s Stats'),
+        title: Text('${displayName}\'s Stats'),
         backgroundColor: Colors.deepPurple,
         centerTitle: true,
       ),
