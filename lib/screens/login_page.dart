@@ -6,7 +6,7 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFFF7A1C),
+      backgroundColor: const Color(0xFFFF7A1C),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -47,24 +47,23 @@ class LoginPage extends StatelessWidget {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-
+                        Navigator.pushNamed(context, '/signin');
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: const Text('Sign in',
-                        style: TextStyle(color: Colors.white)
+                      child: const Text(
+                        'Sign in',
+                        style: TextStyle(color: Colors.white),
                       ),
-
-
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        // Navigate to Sign Up
+                        Navigator.pushNamed(context, '/signup');
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.limeAccent,
