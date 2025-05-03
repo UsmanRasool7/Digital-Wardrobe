@@ -34,8 +34,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      //home: const AuthGate(), // Use later to direct user to home page if logged in
-      home: const LoginPage(), //remove this if using AuthGate
+      home: const AuthGate(), // Use AuthGate for persistent login
       routes: {
         '/login': (context) => const LoginPage(),
         '/signup': (context) => const SignUpPage(),
