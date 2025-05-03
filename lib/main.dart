@@ -11,15 +11,12 @@ import 'screens/wardrobe_page.dart';
 import 'screens/wardrobe_home.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   runApp(
     MultiProvider(
-      providers: [
-        Provider<AuthService>(create: (_) => AuthService()),
-      ],
+      providers: [Provider<AuthService>(create: (_) => AuthService())],
       child: MyApp(),
     ),
   );
@@ -71,7 +68,6 @@ class AuthGate extends StatelessWidget {
   }
 }
 
-
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -82,11 +78,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = [
-    PlannerPage(),
-    StylingPage(),
-    WardrobePage(),
-  ];
+  final List<Widget> _pages = [PlannerPage(), StylingPage(), WardrobePage()];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -106,10 +98,7 @@ class _HomePageState extends State<HomePage> {
             icon: Icon(Icons.calendar_today),
             label: 'Planner',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.style),
-            label: 'Styling',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.style), label: 'Styling'),
           BottomNavigationBarItem(
             icon: Icon(Icons.checkroom),
             label: 'Wardrobe',
