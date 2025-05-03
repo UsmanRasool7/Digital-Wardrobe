@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 
 class SignInPage extends StatefulWidget {
-  const SignInPage({super.key});
+  const SignInPage({Key? key}) : super(key: key);
 
   @override
   State<SignInPage> createState() => _SignInPageState();
@@ -12,9 +12,17 @@ class SignInPage extends StatefulWidget {
 
 class _SignInPageState extends State<SignInPage> {
   final _formKey = GlobalKey<FormState>();
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscureText = true;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   Future<void> _handleSignIn() async {
     if (!_formKey.currentState!.validate()) return;
@@ -22,23 +30,49 @@ class _SignInPageState extends State<SignInPage> {
     setState(() => _isLoading = true);
 
     try {
-      await Provider.of<AuthService>(context, listen: false).login(
-        emailController.text.trim(),
-        passwordController.text.trim(),
+      final user = await Provider.of<AuthService>(context, listen: false).login(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
       );
-      Navigator.pushReplacementNamed(context, '/home');
+
+      if (user != null) {
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sign in failed. Please try again.'),
+          ),
+        );
+      }
     } on FirebaseAuthException catch (e) {
-      String errorMessage = "Sign in failed. Please try again.";
-      if (e.code == 'user-not-found') {
-        errorMessage = "No account found for this email.";
-      } else if (e.code == 'wrong-password') {
-        errorMessage = "Incorrect password.";
+      String errorMessage;
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = 'No account found for this email.';
+          break;
+        case 'wrong-password':
+          errorMessage = 'Incorrect password.';
+          break;
+        case 'invalid-email':
+          errorMessage = 'Invalid email address.';
+          break;
+        case 'user-disabled':
+          errorMessage = 'This user has been disabled.';
+          break;
+        default:
+          errorMessage = 'Sign in failed. Please try again.';
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(errorMessage)),
       );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('An unexpected error occurred.')),
+      );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -59,6 +93,7 @@ class _SignInPageState extends State<SignInPage> {
               child: Form(
                 key: _formKey,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
@@ -105,10 +140,10 @@ class _SignInPageState extends State<SignInPage> {
                       ),
                     ),
                     const SizedBox(height: 24),
-
                     // Email Field
                     TextFormField(
-                      controller: emailController,
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your email';
@@ -138,11 +173,10 @@ class _SignInPageState extends State<SignInPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-
                     // Password Field
                     TextFormField(
-                      controller: passwordController,
-                      obscureText: true,
+                      controller: _passwordController,
+                      obscureText: _obscureText,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your password';
@@ -155,7 +189,13 @@ class _SignInPageState extends State<SignInPage> {
                         fillColor: Colors.white,
                         hintText: 'Password*',
                         hintStyle: const TextStyle(color: Colors.grey),
-                        suffixIcon: const Icon(Icons.visibility_off, color: Colors.grey),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureText ? Icons.visibility_off : Icons.visibility,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () => setState(() => _obscureText = !_obscureText),
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -169,8 +209,27 @@ class _SignInPageState extends State<SignInPage> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () async {
+                          if (_emailController.text.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Enter your email to reset password.')),
+                            );
+                          } else {
+                            await Provider.of<AuthService>(context, listen: false)
+                                .resetPassword(_emailController.text.trim());
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Password reset email sent.')),
+                            );
+                          }
+                        },
+                        child: const Text('Forgot Password?'),
+                      ),
+                    ),
                     const SizedBox(height: 32),
-
                     // Sign In Button
                     SizedBox(
                       width: double.infinity,
@@ -185,7 +244,11 @@ class _SignInPageState extends State<SignInPage> {
                           ),
                         ),
                         child: _isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
+                            ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
                             : const Text(
                           'Confirm',
                           style: TextStyle(fontSize: 16, color: Colors.black),

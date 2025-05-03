@@ -87,7 +87,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 if (pickedFile != null) {
                   final extension = pickedFile.path.split('.').last.toLowerCase();
                   if (['jpg', 'jpeg', 'png'].contains(extension)) {
-                    setState(() {
+                    setState(()
+                    {
                       avatarFile = File(pickedFile.path);
                       profileImage = pickedFile.path;
                     });
