@@ -10,6 +10,7 @@ import 'wardrobe_insights_page.dart'; // Import the WardrobeInsightsScreen here
 import 'package:test_app/screens/add_item_page.dart'; // Add this import
 import 'dart:io'; // Import dart:io for File
 import 'package:test_app/screens/item_detail_page.dart'; // Add this import
+import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
 
 class WardrobeHomePage extends StatefulWidget {
   const WardrobeHomePage({super.key});
@@ -35,6 +36,7 @@ class _WardrobeHomePageState extends State<WardrobeHomePage> {
       LocalStorageService(),
     );
     _getUserDisplayName();
+    _loadWardrobeItems(); // Load wardrobe items from SharedPreferences
   }
 
   void _getUserDisplayName() async {
@@ -49,6 +51,20 @@ class _WardrobeHomePageState extends State<WardrobeHomePage> {
       } else {
         setState(() {
           displayName = 'Cylinder';
+        });
+      }
+    }
+  }
+
+  void _loadWardrobeItems() async {
+    final prefs = await SharedPreferences.getInstance();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      String userKey = 'wardrobe_items_${user.uid}';
+      List<String>? imagePaths = prefs.getStringList(userKey);
+      if (imagePaths != null) {
+        setState(() {
+          wardrobeItems = imagePaths.map((path) => File(path)).toList();
         });
       }
     }

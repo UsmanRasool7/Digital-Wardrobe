@@ -43,7 +43,7 @@ dependencies:
   cloud_firestore: ^5.6.7
   firebase_storage: ^12.4.5
   http: ^0.13.5
-
+  shared_preferences: ^2.0.15
 
   path_provider: any
 dev_dependencies:

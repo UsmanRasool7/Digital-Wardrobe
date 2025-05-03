@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AddItemPage extends StatefulWidget {
   const AddItemPage({super.key});
@@ -31,7 +33,19 @@ class _AddItemPageState extends State<AddItemPage> {
     }
   }
 
+  void _saveToSharedPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      String userKey = 'wardrobe_items_${user.uid}';
+      List<String> imagePaths =
+          selectedImages.map((file) => file.path).toList();
+      await prefs.setStringList(userKey, imagePaths);
+    }
+  }
+
   void _saveAndReturn() {
+    _saveToSharedPreferences(); // Save selected images to SharedPreferences
     Navigator.pop(context, selectedImages);
   }
 
