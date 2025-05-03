@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:test_app/screens/forgot_password.dart';
 import 'package:test_app/screens/login_page.dart';
 import 'package:test_app/screens/signin.dart';
 import 'package:test_app/screens/signup.dart';
@@ -40,6 +41,7 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => const SignUpPage(),
         '/signin': (context) => const SignInPage(),
         '/home': (context) => const WardrobeHomePage(),
+        '/forgot_password': (context) => const ForgotPasswordPage(),
       },
     );
   }

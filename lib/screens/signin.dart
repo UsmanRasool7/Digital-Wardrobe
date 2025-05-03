@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 
 class SignInPage extends StatefulWidget {
-  const SignInPage({Key? key}) : super(key: key);
+  const SignInPage({super.key});
 
   @override
   State<SignInPage> createState() => _SignInPageState();
@@ -213,18 +213,9 @@ class _SignInPageState extends State<SignInPage> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
+
                         onPressed: () async {
-                          if (_emailController.text.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Enter your email to reset password.')),
-                            );
-                          } else {
-                            await Provider.of<AuthService>(context, listen: false)
-                                .resetPassword(_emailController.text.trim());
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Password reset email sent.')),
-                            );
-                          }
+                          Navigator.pushNamed(context, '/forgot_password');
                         },
                         child: const Text('Forgot Password?'),
                       ),

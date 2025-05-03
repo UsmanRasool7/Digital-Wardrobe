@@ -45,7 +45,7 @@ class _WardrobeInsightsScreenState extends State<WardrobeInsightsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${displayName}\'s Stats'),
+        title: Text('$displayName\'s Stats'),
         backgroundColor: Colors.deepPurple,
         centerTitle: true,
       ),

@@ -17,12 +17,10 @@ class _AddItemPageState extends State<AddItemPage> {
 
   void _pickImagesFromGallery() async {
     final pickedFiles = await _picker.pickMultiImage();
-    if (pickedFiles != null) {
-      setState(() {
-        selectedImages.addAll(pickedFiles.map((file) => File(file.path)));
-      });
+    setState(() {
+      selectedImages.addAll(pickedFiles.map((file) => File(file.path)));
+    });
     }
-  }
 
   void _captureImageFromCamera() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.camera);
