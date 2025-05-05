@@ -28,8 +28,14 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
   }
 
   void _fetchClothingItem() {
-    _clothingItemFuture =
-        ClothingItemRepository().getClothingItemById(widget.itemId);
+    _clothingItemFuture = ClothingItemRepository()
+        .getClothingItemById(widget.itemId)
+        .then((item) {
+      if (item == null) {
+        throw Exception('Item not found');
+      }
+      return item;
+    });
   }
 
   @override
@@ -108,8 +114,10 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                             children: [
                               const Icon(Icons.style, color: Colors.teal),
                               const SizedBox(width: 8),
-                              Text('Style: ${clothingItem.styleTags!}',
-                                  style: Theme.of(context).textTheme.bodyLarge),
+                              Text(
+                                'Style: ${clothingItem.styleTags!.join(', ')}',
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
                             ],
                           ),
                         if (clothingItem.moodTags != null)
@@ -117,8 +125,10 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                             children: [
                               const Icon(Icons.mood, color: Colors.teal),
                               const SizedBox(width: 8),
-                              Text('Mood: ${clothingItem.moodTags!}',
-                                  style: Theme.of(context).textTheme.bodyLarge),
+                              Text(
+                                'Mood: ${clothingItem.moodTags!.join(', ')}',
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
                             ],
                           ),
                         if (clothingItem.occasionTags != null)
@@ -126,8 +136,10 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                             children: [
                               const Icon(Icons.event, color: Colors.teal),
                               const SizedBox(width: 8),
-                              Text('Occasion: ${clothingItem.occasionTags!}',
-                                  style: Theme.of(context).textTheme.bodyLarge),
+                              Text(
+                                'Occasion: ${clothingItem.occasionTags!.join(', ')}',
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
                             ],
                           ),
                         if (clothingItem.priceTag != null)
