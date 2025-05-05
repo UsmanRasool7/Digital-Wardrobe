@@ -23,6 +23,7 @@ class _AddItemPageState extends State<AddItemPage> {
   final ClothingItemRepository _repo = ClothingItemRepository();
 
   File? selectedImage;
+  bool _removeBg = true; // Toggle for background removal
 
   // --- tag state ---
   final _priceController = TextEditingController();
@@ -68,12 +69,28 @@ class _AddItemPageState extends State<AddItemPage> {
     }
     final picked = await _picker.pickImage(source: src);
     if (picked != null) {
-      final cleaned = await _removeBackground(File(picked.path));
-      if (cleaned != null) setState(() => selectedImage = cleaned);
+      File? finalImage = File(picked.path);
+      if (_removeBg) {
+        try {
+          final cleaned = await _removeBackground(finalImage);
+          if (cleaned != null) {
+            finalImage = cleaned;
+          } else {
+            _showError('Background removal failed. Uploading original image.');
+          }
+        } catch (e) {
+          _showError(
+              'Background removal API unreachable. Uploading original image.');
+        }
+      }
+      if (mounted) {
+        setState(() => selectedImage = finalImage);
+      }
     }
   }
 
   void _showError(String message) {
+    if (!mounted) return; // Ensure the widget is still mounted
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
@@ -99,10 +116,6 @@ class _AddItemPageState extends State<AddItemPage> {
     if (_priceController.text.isEmpty ||
         double.tryParse(_priceController.text) == null) {
       _showError('Please enter a valid Price.');
-      return false;
-    }
-    if (_selectedColorTags.isEmpty) {
-      _showError('Please select at least one Color tag.');
       return false;
     }
     if (_selectedFitTag == null) {
@@ -184,7 +197,8 @@ class _AddItemPageState extends State<AddItemPage> {
     );
   }
 
-  Widget _buildMultiSelectChips(String label, List<String> options, List<String> selected) {
+  Widget _buildMultiSelectChips(
+      String label, List<String> options, List<String> selected) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -249,13 +263,30 @@ class _AddItemPageState extends State<AddItemPage> {
                   onPressed: () => _pickImage(ImageSource.gallery),
                   icon: const Icon(Icons.photo_library),
                   label: const Text('Gallery'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent),
                 ),
                 ElevatedButton.icon(
                   onPressed: () => _pickImage(ImageSource.camera),
                   icon: const Icon(Icons.camera_alt),
                   label: const Text('Camera'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent),
+                ),
+              ],
+            ),
+
+            const Divider(height: 32),
+
+            // Toggle for background removal
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Remove Background',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                Switch(
+                  value: _removeBg,
+                  onChanged: (value) => setState(() => _removeBg = value),
                 ),
               ],
             ),
@@ -286,16 +317,19 @@ class _AddItemPageState extends State<AddItemPage> {
 
             const SizedBox(height: 16),
             // Price
-            Text('Price *', style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text('Price *',
+                style: const TextStyle(fontWeight: FontWeight.bold)),
             TextField(
               controller: _priceController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               decoration: const InputDecoration(hintText: 'Enter price'),
             ),
 
             const SizedBox(height: 16),
             // Color multi‑select
-            _buildMultiSelectChips('Color Tags', TagOptions.colorTags, _selectedColorTags),
+            _buildMultiSelectChips(
+                'Color Tags', TagOptions.colorTags, _selectedColorTags),
 
             const SizedBox(height: 16),
             // Remaining single‑selects
