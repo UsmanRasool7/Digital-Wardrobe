@@ -20,36 +20,119 @@ class ItemDetailPage extends StatelessWidget {
         : Image.file(File(imageUrl), fit: BoxFit.cover);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Item Detail')),
+      appBar: AppBar(
+        title: const Text('Item Detail'),
+        backgroundColor: Colors.teal, // Adjust app bar color to match app theme
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(child: imageWidget),
+          Expanded(
+            child: ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(bottom: Radius.circular(16)),
+              child: imageWidget,
+            ),
+          ),
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (clothingItem.styleTags != null)
-                  Text('Style: ${clothingItem.styleTags!}'),
-                if (clothingItem.moodTags != null)
-                  Text('Mood: ${clothingItem.moodTags!}'),
-                if (clothingItem.occasionTags != null)
-                  Text('Occasion: ${clothingItem.occasionTags!}'),
-                if (clothingItem.priceTag != null)
-                  Text('Price: \$${clothingItem.priceTag!.toStringAsFixed(2)}'),
-                if (clothingItem.colorTags != null && clothingItem.colorTags!.isNotEmpty)
-                  Text('Colors: ${clothingItem.colorTags!.join(', ')}'),
-                if (clothingItem.fitTag != null)
-                  Text('Fit: ${clothingItem.fitTag!}'),
-                if (clothingItem.weatherTypeTag != null)
-                  Text('Weather: ${clothingItem.weatherTypeTag!}'),
-                if (clothingItem.culturalInfluenceTag != null)
-                  Text('Cultural Influence: ${clothingItem.culturalInfluenceTag!}'),
-                if (clothingItem.wearTypeTag != null)
-                  Text('Wear Type: ${clothingItem.wearTypeTag!.name}'),
-              ],
+            child: Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (clothingItem.styleTags != null)
+                      Row(
+                        children: [
+                          const Icon(Icons.style, color: Colors.teal),
+                          const SizedBox(width: 8),
+                          Text('Style: ${clothingItem.styleTags!}',
+                              style: Theme.of(context).textTheme.bodyLarge),
+                        ],
+                      ),
+                    if (clothingItem.moodTags != null)
+                      Row(
+                        children: [
+                          const Icon(Icons.mood, color: Colors.teal),
+                          const SizedBox(width: 8),
+                          Text('Mood: ${clothingItem.moodTags!}',
+                              style: Theme.of(context).textTheme.bodyLarge),
+                        ],
+                      ),
+                    if (clothingItem.occasionTags != null)
+                      Row(
+                        children: [
+                          const Icon(Icons.event, color: Colors.teal),
+                          const SizedBox(width: 8),
+                          Text('Occasion: ${clothingItem.occasionTags!}',
+                              style: Theme.of(context).textTheme.bodyLarge),
+                        ],
+                      ),
+                    if (clothingItem.priceTag != null)
+                      Row(
+                        children: [
+                          const Icon(Icons.attach_money, color: Colors.teal),
+                          const SizedBox(width: 8),
+                          Text(
+                              'Price: \$${clothingItem.priceTag!.toStringAsFixed(2)}',
+                              style: Theme.of(context).textTheme.bodyLarge),
+                        ],
+                      ),
+                    if (clothingItem.colorTags != null &&
+                        clothingItem.colorTags!.isNotEmpty)
+                      Row(
+                        children: [
+                          const Icon(Icons.color_lens, color: Colors.teal),
+                          const SizedBox(width: 8),
+                          Text('Colors: ${clothingItem.colorTags!.join(', ')}',
+                              style: Theme.of(context).textTheme.bodyLarge),
+                        ],
+                      ),
+                    if (clothingItem.fitTag != null)
+                      Row(
+                        children: [
+                          const Icon(Icons.checkroom, color: Colors.teal),
+                          const SizedBox(width: 8),
+                          Text('Fit: ${clothingItem.fitTag!}',
+                              style: Theme.of(context).textTheme.bodyLarge),
+                        ],
+                      ),
+                    if (clothingItem.weatherTypeTag != null)
+                      Row(
+                        children: [
+                          const Icon(Icons.wb_sunny, color: Colors.teal),
+                          const SizedBox(width: 8),
+                          Text('Weather: ${clothingItem.weatherTypeTag!}',
+                              style: Theme.of(context).textTheme.bodyLarge),
+                        ],
+                      ),
+                    if (clothingItem.culturalInfluenceTag != null)
+                      Row(
+                        children: [
+                          const Icon(Icons.public, color: Colors.teal),
+                          const SizedBox(width: 8),
+                          Text(
+                              'Cultural Influence: ${clothingItem.culturalInfluenceTag!}',
+                              style: Theme.of(context).textTheme.bodyLarge),
+                        ],
+                      ),
+                    if (clothingItem.wearTypeTag != null)
+                      Row(
+                        children: [
+                          const Icon(Icons.category, color: Colors.teal),
+                          const SizedBox(width: 8),
+                          Text('Wear Type: ${clothingItem.wearTypeTag!.name}',
+                              style: Theme.of(context).textTheme.bodyLarge),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 16),
