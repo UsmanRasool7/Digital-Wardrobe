@@ -3,11 +3,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/clothing_item_model.dart';
+import 'edit_item_page.dart';
 
 class ItemDetailPage extends StatelessWidget {
-  final ClothingItemModel clothingItem;
+  ClothingItemModel clothingItem;
 
-  const ItemDetailPage({
+  ItemDetailPage({
     super.key,
     required this.clothingItem,
   });
@@ -23,6 +24,25 @@ class ItemDetailPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Item Detail'),
         backgroundColor: Colors.teal, // Adjust app bar color to match app theme
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () async {
+              final updatedItem = await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) =>
+                      EditItemPage(clothingItem: clothingItem),
+                ),
+              );
+              if (updatedItem != null) {
+                // Update the UI with the edited item
+                clothingItem = updatedItem;
+                (context as Element).markNeedsBuild();
+              }
+            },
+            tooltip: 'Edit Item',
+          ),
+        ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
