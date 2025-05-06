@@ -1,3 +1,5 @@
+// lib/pages/edit_item_page.dart
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -23,7 +25,7 @@ class _EditItemPageState extends State<EditItemPage> {
   late String? _selectedStyleTag;
   late String? _selectedMoodTag;
   late String? _selectedOccasionTag;
-  late List<String> _selectedColorTags;
+  late String? _selectedColorTag;
   late String? _selectedFitTag;
   late String? _selectedWeatherTypeTag;
   late String? _selectedCulturalTag;
@@ -34,11 +36,12 @@ class _EditItemPageState extends State<EditItemPage> {
     super.initState();
     selectedImage = File(widget.clothingItem.imageUrl);
     _priceController = TextEditingController(
-        text: widget.clothingItem.priceTag?.toStringAsFixed(2) ?? '');
-    _selectedStyleTag = widget.clothingItem.styleTags?.first;
-    _selectedMoodTag = widget.clothingItem.moodTags?.first;
-    _selectedOccasionTag = widget.clothingItem.occasionTags?.first;
-    _selectedColorTags = widget.clothingItem.colorTags ?? [];
+      text: widget.clothingItem.priceTag?.toStringAsFixed(2) ?? '',
+    );
+    _selectedStyleTag = widget.clothingItem.styleTag;
+    _selectedMoodTag = widget.clothingItem.moodTag;
+    _selectedOccasionTag = widget.clothingItem.occasionTag;
+    _selectedColorTag = widget.clothingItem.colorTag;
     _selectedFitTag = widget.clothingItem.fitTag;
     _selectedWeatherTypeTag = widget.clothingItem.weatherTypeTag;
     _selectedCulturalTag = widget.clothingItem.culturalInfluenceTag;
@@ -70,6 +73,10 @@ class _EditItemPageState extends State<EditItemPage> {
       _showError('Please select an Occasion tag.');
       return false;
     }
+    if (_selectedColorTag == null) {
+      _showError('Please select a Color tag.');
+      return false;
+    }
     if (_selectedFitTag == null) {
       _showError('Please select a Fit tag.');
       return false;
@@ -90,6 +97,7 @@ class _EditItemPageState extends State<EditItemPage> {
   }
 
   void _showError(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
@@ -101,10 +109,10 @@ class _EditItemPageState extends State<EditItemPage> {
     final updatedItem = widget.clothingItem.copyWith(
       imageUrl: selectedImage.path,
       priceTag: double.parse(_priceController.text),
-      styleTags: [_selectedStyleTag!],
-      moodTags: [_selectedMoodTag!],
-      occasionTags: [_selectedOccasionTag!],
-      colorTags: _selectedColorTags,
+      styleTag: _selectedStyleTag!,
+      moodTag: _selectedMoodTag!,
+      occasionTag: _selectedOccasionTag!,
+      colorTag: _selectedColorTag!,
       fitTag: _selectedFitTag!,
       weatherTypeTag: _selectedWeatherTypeTag!,
       culturalInfluenceTag: _selectedCulturalTag!,
@@ -138,41 +146,11 @@ class _EditItemPageState extends State<EditItemPage> {
           isExpanded: true,
           hint: Text('Select $label'),
           value: value,
-          items: options.map((opt) {
-            final text = labelBuilder?.call(opt) ?? opt.toString();
-            return DropdownMenuItem(value: opt, child: Text(text));
-          }).toList(),
+          items: options.map((opt) => DropdownMenuItem(
+            value: opt,
+            child: Text(labelBuilder?.call(opt) ?? opt.toString()),
+          )).toList(),
           onChanged: onChanged,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMultiSelectChips(
-      String label, List<String> options, List<String> selected) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('$label *', style: const TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 4),
-        Wrap(
-          spacing: 8,
-          children: options.map((opt) {
-            final isSel = selected.contains(opt);
-            return ChoiceChip(
-              label: Text(opt),
-              selected: isSel,
-              onSelected: (on) {
-                setState(() {
-                  if (on) {
-                    selected.add(opt);
-                  } else {
-                    selected.remove(opt);
-                  }
-                });
-              },
-            );
-          }).toList(),
         ),
       ],
     );
@@ -243,17 +221,19 @@ class _EditItemPageState extends State<EditItemPage> {
               onChanged: (v) => setState(() => _selectedOccasionTag = v),
             ),
             const SizedBox(height: 16),
-            Text('Price *',
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text('Price *', style: const TextStyle(fontWeight: FontWeight.bold)),
             TextField(
               controller: _priceController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: const InputDecoration(hintText: 'Enter price'),
             ),
             const SizedBox(height: 16),
-            _buildMultiSelectChips(
-                'Color Tags', TagOptions.colorTags, _selectedColorTags),
+            _buildDropdown<String>(
+              label: 'Color Tag',
+              options: TagOptions.colorTags,
+              value: _selectedColorTag,
+              onChanged: (v) => setState(() => _selectedColorTag = v),
+            ),
             const SizedBox(height: 16),
             _buildDropdown<String>(
               label: 'Fit Tag',
