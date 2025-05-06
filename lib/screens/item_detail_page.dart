@@ -49,7 +49,7 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
           );
         } else if (snapshot.hasError) {
           return Scaffold(
-            body: Center(child: Text('Error: \${snapshot.error}')),
+            body: Center(child: Text('Error: ${snapshot.error}')),
           );
         } else if (!snapshot.hasData) {
           return const Scaffold(
@@ -59,9 +59,23 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
 
         final clothingItem = snapshot.data!;
         final imageUrl = clothingItem.imageUrl;
-        final imageWidget = imageUrl.startsWith('http')
-            ? Image.network(imageUrl, fit: BoxFit.cover)
-            : Image.file(File(imageUrl), fit: BoxFit.cover);
+        Widget imageWidget;
+
+        if (imageUrl.startsWith('http')) {
+          imageWidget = Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: 250,
+          );
+        } else {
+          imageWidget = Image.file(
+            File(imageUrl),
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: 250,
+          );
+        }
 
         return Scaffold(
           appBar: AppBar(
@@ -73,8 +87,9 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                 onPressed: () async {
                   final updatedItem = await Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) =>
-                          EditItemPage(clothingItem: clothingItem),
+                      builder: (context) => EditItemPage(
+                        clothingItem: clothingItem,
+                      ),
                     ),
                   );
                   if (updatedItem != null) {
@@ -87,142 +102,114 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
               ),
             ],
           ),
-          body: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: ClipRRect(
+          body: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ClipRRect(
                   borderRadius:
                   const BorderRadius.vertical(bottom: Radius.circular(16)),
                   child: imageWidget,
                 ),
-              ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (clothingItem.styleTag != null)
-                          Row(
-                            children: [
-                              const Icon(Icons.style, color: Colors.teal),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Style: \${clothingItem.styleTag}',
-                                style: Theme.of(context).textTheme.bodyLarge,
-                              ),
-                            ],
-                          ),
-                        if (clothingItem.moodTag != null)
-                          Row(
-                            children: [
-                              const Icon(Icons.mood, color: Colors.teal),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Mood: \${clothingItem.moodTag}',
-                                style: Theme.of(context).textTheme.bodyLarge,
-                              ),
-                            ],
-                          ),
-                        if (clothingItem.occasionTag != null)
-                          Row(
-                            children: [
-                              const Icon(Icons.event, color: Colors.teal),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Occasion: \${clothingItem.occasionTag}',
-                                style: Theme.of(context).textTheme.bodyLarge,
-                              ),
-                            ],
-                          ),
-                        if (clothingItem.priceTag != null)
-                          Row(
-                            children: [
-                              const Icon(Icons.attach_money,
-                                  color: Colors.teal),
-                              const SizedBox(width: 8),
-                              Text(
-                                  'Price: \$\${clothingItem.priceTag!.toStringAsFixed(2)}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyLarge),
-                            ],
-                          ),
-                        if (clothingItem.colorTag != null)
-                          Row(
-                            children: [
-                              const Icon(Icons.color_lens, color: Colors.teal),
-                              const SizedBox(width: 8),
-                              Text(
-                                  'Color: \${clothingItem.colorTag}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyLarge),
-                            ],
-                          ),
-                        if (clothingItem.fitTag != null)
-                          Row(
-                            children: [
-                              const Icon(Icons.checkroom, color: Colors.teal),
-                              const SizedBox(width: 8),
-                              Text('Fit: \${clothingItem.fitTag}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyLarge),
-                            ],
-                          ),
-                        if (clothingItem.weatherTypeTag != null)
-                          Row(
-                            children: [
-                              const Icon(Icons.wb_sunny, color: Colors.teal),
-                              const SizedBox(width: 8),
-                              Text('Weather: \${clothingItem.weatherTypeTag}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyLarge),
-                            ],
-                          ),
-                        if (clothingItem.culturalInfluenceTag != null)
-                          Row(
-                            children: [
-                              const Icon(Icons.public, color: Colors.teal),
-                              const SizedBox(width: 8),
-                              Text(
-                                  'Cultural Influence: \${clothingItem.culturalInfluenceTag}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyLarge),
-                            ],
-                          ),
-                        if (clothingItem.wearTypeTag != null)
-                          Row(
-                            children: [
-                              const Icon(Icons.category, color: Colors.teal),
-                              const SizedBox(width: 8),
-                              Text(
-                                  'Wear Type: \${clothingItem.wearTypeTag!.name}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyLarge),
-                            ],
-                          ),
-                      ],
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (clothingItem.styleTag != null)
+                            _buildDetailRow(
+                              icon: Icons.style,
+                              label: 'Style',
+                              value: clothingItem.styleTag!,
+                            ),
+                          if (clothingItem.moodTag != null)
+                            _buildDetailRow(
+                              icon: Icons.mood,
+                              label: 'Mood',
+                              value: clothingItem.moodTag!,
+                            ),
+                          if (clothingItem.occasionTag != null)
+                            _buildDetailRow(
+                              icon: Icons.event,
+                              label: 'Occasion',
+                              value: clothingItem.occasionTag!,
+                            ),
+                          if (clothingItem.priceTag != null)
+                            _buildDetailRow(
+                              icon: Icons.attach_money,
+                              label: 'Price',
+                              value:
+                              '\\${clothingItem.priceTag!.toStringAsFixed(2)}',
+                            ),
+                          if (clothingItem.colorTag != null)
+                            _buildDetailRow(
+                              icon: Icons.color_lens,
+                              label: 'Color',
+                              value: clothingItem.colorTag!,
+                            ),
+                          if (clothingItem.fitTag != null)
+                            _buildDetailRow(
+                              icon: Icons.checkroom,
+                              label: 'Fit',
+                              value: clothingItem.fitTag!,
+                            ),
+                          if (clothingItem.weatherTypeTag != null)
+                            _buildDetailRow(
+                              icon: Icons.wb_sunny,
+                              label: 'Weather',
+                              value: clothingItem.weatherTypeTag!,
+                            ),
+                          if (clothingItem.culturalInfluenceTag != null)
+                            _buildDetailRow(
+                              icon: Icons.public,
+                              label: 'Cultural Influence',
+                              value: clothingItem.culturalInfluenceTag!,
+                            ),
+                          if (clothingItem.wearTypeTag != null)
+                            _buildDetailRow(
+                              icon: Icons.category,
+                              label: 'Wear Type',
+                              value: clothingItem.wearTypeTag!.name,
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-            ],
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildDetailRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.teal),
+          const SizedBox(width: 8),
+          Text(
+            '$label: $value',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+        ],
+      ),
     );
   }
 }
