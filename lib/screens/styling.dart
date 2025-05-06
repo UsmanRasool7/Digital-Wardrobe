@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:test_app/widgets/custom_bottom_nav.dart'; // Import your custom bottom nav bar
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:test_app/widgets/custom_bottom_nav.dart';
+import 'package:test_app/repositories/clothing_item_repository.dart';
+import 'package:test_app/models/clothing_item_model.dart';
 
 class StylingPage extends StatefulWidget {
   const StylingPage({super.key});
@@ -9,10 +12,11 @@ class StylingPage extends StatefulWidget {
 }
 
 class _StylingPageState extends State<StylingPage> {
-  int _currentIndex = 1; // Bottom Nav selected index
-  int _selectedTab = 0;  // 0 = Dress Me, 1 = Canvas, 2 = Moodboards
-
+  int _currentIndex = 1;
+  int _selectedTab = 0;
   final List<String> _tabs = ['Dress Me', 'Canvas', 'Moodboards'];
+
+  final ClothingItemRepository _clothingRepo = ClothingItemRepository();
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +26,7 @@ class _StylingPageState extends State<StylingPage> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            // Top Tabs with Sliding Indicator
+            // Top Tabs
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: List.generate(_tabs.length, (index) {
@@ -31,7 +35,6 @@ class _StylingPageState extends State<StylingPage> {
                     setState(() {
                       _selectedTab = index;
                     });
-                    // Empty onPressed for now
                   },
                   child: Column(
                     children: [
@@ -62,7 +65,7 @@ class _StylingPageState extends State<StylingPage> {
               }),
             ),
             const SizedBox(height: 30),
-            // Green Arrow Button
+            // Arrow Button
             Container(
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
@@ -74,20 +77,17 @@ class _StylingPageState extends State<StylingPage> {
               ),
             ),
             const SizedBox(height: 90),
-            // Add Tops
             _buildAddItem('Add Tops'),
             const SizedBox(height: 30),
-            // Add Bottoms
             _buildAddItem('Add Bottoms'),
             const SizedBox(height: 30),
-            // Add Footwear
             _buildAddItem('Add Footwear'),
             const Spacer(),
             // Dress Me Button
             Padding(
               padding: const EdgeInsets.only(bottom: 10.0),
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: _handleDressMePressed,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.purple[100],
                   foregroundColor: Colors.black,
@@ -111,10 +111,64 @@ class _StylingPageState extends State<StylingPage> {
           setState(() {
             _currentIndex = index;
           });
-          // Handle bottom nav tap navigation if needed
         },
       ),
     );
+  }
+
+  Future<void> _handleDressMePressed() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser!;
+      final userId = user.uid;
+      final items = await _clothingRepo.getUserClothingItems(userId);
+
+      // Grouped clothing items
+      List<ClothingItemModel> topWears = [];
+      List<ClothingItemModel> bottomWears = [];
+      List<ClothingItemModel> footwears = [];
+
+      // Grouped tag vectors
+      List<List<String>> topVectors = [];
+      List<List<String>> bottomVectors = [];
+      List<List<String>> footVectors = [];
+
+      for (var item in items) {
+        final vector = [
+          ...?item.styleTags,
+          ...?item.moodTags,
+          ...?item.occasionTags,
+          ...?item.colorTags,
+          if (item.fitTag != null) item.fitTag!,
+          if (item.culturalInfluenceTag != null) item.culturalInfluenceTag!,
+        ];
+
+        switch (item.wearTypeTag?.name.toLowerCase()) {
+          case 'topwear':
+            topWears.add(item);
+            topVectors.add(vector);
+            break;
+          case 'bottomwear':
+            bottomWears.add(item);
+            bottomVectors.add(vector);
+            break;
+          case 'footwear':
+            footwears.add(item);
+            footVectors.add(vector);
+            break;
+        }
+      }
+
+      debugPrint('Topwear Vectors: $topVectors');
+      debugPrint('Bottomwear Vectors: $bottomVectors');
+      debugPrint('Footwear Vectors: $footVectors');
+
+      // TODO: Add recommendation logic or navigate to outfit preview
+    } catch (e) {
+      debugPrint('Error fetching clothing items: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to fetch clothing items.')),
+      );
+    }
   }
 
   Widget _buildAddItem(String text) {
