@@ -1,5 +1,8 @@
+// lib/screens/styling_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:test_app/widgets/custom_bottom_nav.dart'; // Import your custom bottom nav bar
+import 'package:test_app/screens/user_input.dart'; // Import the preferences page
 
 class StylingPage extends StatefulWidget {
   const StylingPage({super.key});
@@ -31,7 +34,6 @@ class _StylingPageState extends State<StylingPage> {
                     setState(() {
                       _selectedTab = index;
                     });
-                    // Empty onPressed for now
                   },
                   child: Column(
                     children: [
@@ -87,7 +89,17 @@ class _StylingPageState extends State<StylingPage> {
             Padding(
               padding: const EdgeInsets.only(bottom: 10.0),
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () async {
+                  final prefs = await Navigator.of(context).push<Map<String, String>>(
+                    MaterialPageRoute(
+                      builder: (_) => const UserPreferencesPage(),
+                    ),
+                  );
+                  if (prefs != null) {
+                    // TODO: use the returned preferences map
+                    debugPrint('User Preferences: $prefs');
+                  }
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.purple[100],
                   foregroundColor: Colors.black,
@@ -111,7 +123,6 @@ class _StylingPageState extends State<StylingPage> {
           setState(() {
             _currentIndex = index;
           });
-          // Handle bottom nav tap navigation if needed
         },
       ),
     );
