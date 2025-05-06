@@ -139,41 +139,47 @@ class _StylingPageState extends State<StylingPage> {
       List<ClothingItemModel> footwears = [];
 
       // Grouped tag vectors
-      List<List<String>> topVectors = [];
-      List<List<String>> bottomVectors = [];
-      List<List<String>> footVectors = [];
+      List<Map<String, String>> topVectors = [];
+      List<Map<String, String>> bottomVectors = [];
+      List<Map<String, String>> footVectors = [];
 
       for (var item in items) {
-        final vector = [
-          ...?item.styleTags,
-          ...?item.moodTags,
-          ...?item.occasionTags,
-          ...?item.colorTags,
-          if (item.fitTag != null) item.fitTag!,
-          if (item.culturalInfluenceTag != null) item.culturalInfluenceTag!,
-        ];
+        final vector = <String, String>{};
+        debugPrint('Item tags: style=${item.styleTag}, mood=${item.moodTag}, occasion=${item.occasionTag}, color=${item.colorTag}, fit=${item.fitTag}, culture=${item.culturalInfluenceTag}, wearType=${item.wearTypeTag}');
 
-        switch (item.wearTypeTag?.name.toLowerCase()) {
-          case 'topwear':
+        if (item.styleTag != null) vector['styleTags'] = item.styleTag!;
+        if (item.moodTag != null) vector['moodTags'] = item.moodTag!;
+        if (item.occasionTag != null) vector['occasionTags'] = item.occasionTag!;
+        if (item.colorTag != null) vector['colorTags'] = item.colorTag!;
+        if (item.fitTag != null) vector['fitTag'] = item.fitTag!;
+        if (item.culturalInfluenceTag != null) {
+          vector['culturalInfluenceTag'] = item.culturalInfluenceTag!;
+        }
+
+        switch (item.wearTypeTag) {
+          case WearType.topWear:
             topWears.add(item);
             topVectors.add(vector);
             break;
-          case 'bottomwear':
+          case WearType.bottomWear:
             bottomWears.add(item);
             bottomVectors.add(vector);
             break;
-          case 'footwear':
+          case WearType.footwear:
             footwears.add(item);
             footVectors.add(vector);
+            break;
+          default:
             break;
         }
       }
 
-      debugPrint('Topwear Vectors: $topVectors');
-      debugPrint('Bottomwear Vectors: $bottomVectors');
-      debugPrint('Footwear Vectors: $footVectors');
+      // debugPrint('Topwear Vectors: $topVectors');
+      // debugPrint('Bottomwear Vectors: $bottomVectors');
+      // debugPrint('Footwear Vectors: $footVectors');
 
       // TODO: Add recommendation logic or navigate to outfit preview
+
     } catch (e) {
       debugPrint('Error fetching clothing items: $e');
       ScaffoldMessenger.of(context).showSnackBar(
