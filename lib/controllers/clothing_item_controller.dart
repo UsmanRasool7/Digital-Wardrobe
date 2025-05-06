@@ -8,38 +8,38 @@ class ClothingItemController {
   ClothingItemController(this._repo);
 
   Future<void> uploadClothingItem({
-    required String userId,
-    required String imageUrl,
-    required String category,
-    String? color,
-    List<String>? tags,
-    List<String>? styleTags,
-    List<String>? moodTags,
-    double? priceTag,
-    List<String>? occasionTags,
-    List<String>? colorTags,
-    String? fitTag,
-    String? weatherTypeTag,
-    String? culturalInfluenceTag,
-    WearType? wearTypeTag,
+    required String   userId,
+    required String   imageUrl,
+    required String   category,
+    String?           color,
+    String?           tag,                   // was List<String>? tags
+    String?           styleTag,              // was List<String>? styleTags
+    String?           moodTag,               // was List<String>? moodTags
+    double?           priceTag,
+    String?           occasionTag,           // was List<String>? occasionTags
+    String?           colorTag,              // was List<String>? colorTags
+    String?           fitTag,
+    String?           weatherTypeTag,
+    String?           culturalInfluenceTag,
+    WearType?         wearTypeTag,
   }) async {
     final item = ClothingItemModel(
-      id: const Uuid().v4(),
-      userId: userId,
-      imageUrl: imageUrl,
-      category: category,
-      color: color,
-      tags: tags,
-      uploadDate: DateTime.now(),
-      styleTags: styleTags,
-      moodTags: moodTags,
-      priceTag: priceTag,
-      occasionTags: occasionTags,
-      colorTags: colorTags,
-      fitTag: fitTag,
-      weatherTypeTag: weatherTypeTag,
-      culturalInfluenceTag: culturalInfluenceTag,
-      wearTypeTag: wearTypeTag,
+      id:                     const Uuid().v4(),
+      userId:                 userId,
+      imageUrl:               imageUrl,
+      category:               category,
+      color:                  color,
+      tag:                    tag,
+      uploadDate:             DateTime.now(),
+      styleTag:               styleTag,
+      moodTag:                moodTag,
+      priceTag:               priceTag,
+      occasionTag:            occasionTag,
+      colorTag:               colorTag,
+      fitTag:                 fitTag,
+      weatherTypeTag:         weatherTypeTag,
+      culturalInfluenceTag:   culturalInfluenceTag,
+      wearTypeTag:            wearTypeTag,
     );
 
     await _repo.addClothingItem(item);

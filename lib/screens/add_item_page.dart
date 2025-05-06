@@ -26,11 +26,11 @@ class _AddItemPageState extends State<AddItemPage> {
   bool _removeBg = true; // Toggle for background removal
 
   // --- tag state ---
-  final _priceController = TextEditingController();
+  final TextEditingController _priceController = TextEditingController();
   String? _selectedStyleTag;
   String? _selectedMoodTag;
   String? _selectedOccasionTag;
-  final List<String> _selectedColorTags = [];
+  String? _selectedColorTag;
   String? _selectedFitTag;
   String? _selectedWeatherTypeTag;
   String? _selectedCulturalTag;
@@ -146,14 +146,14 @@ class _AddItemPageState extends State<AddItemPage> {
       userId: user.uid,
       imageUrl: selectedImage!.path,
       category: 'Uncategorized',
-      color: _selectedColorTags.first,
-      tags: null,
+      color: _selectedColorTag,
+      tag: null,
       uploadDate: DateTime.now(),
-      styleTags: [_selectedStyleTag!],
-      moodTags: [_selectedMoodTag!],
+      styleTag: _selectedStyleTag!,
+      moodTag: _selectedMoodTag!,
       priceTag: double.parse(_priceController.text),
-      occasionTags: [_selectedOccasionTag!],
-      colorTags: _selectedColorTags,
+      occasionTag: _selectedOccasionTag!,
+      colorTag: _selectedColorTag,
       fitTag: _selectedFitTag!,
       weatherTypeTag: _selectedWeatherTypeTag!,
       culturalInfluenceTag: _selectedCulturalTag!,
@@ -327,9 +327,13 @@ class _AddItemPageState extends State<AddItemPage> {
             ),
 
             const SizedBox(height: 16),
-            // Color multi‑select
-            _buildMultiSelectChips(
-                'Color Tags', TagOptions.colorTags, _selectedColorTags),
+            // Color dropdown
+            _buildDropdown<String>(
+              label: 'Color Tag',
+              options: TagOptions.colorTags,
+              value: _selectedColorTag,
+              onChanged: (v) => setState(() => _selectedColorTag = v),
+            ),
 
             const SizedBox(height: 16),
             // Remaining single‑selects

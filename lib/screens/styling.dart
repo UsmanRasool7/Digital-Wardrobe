@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:test_app/widgets/custom_bottom_nav.dart';
 import 'package:test_app/repositories/clothing_item_repository.dart';
 import 'package:test_app/models/clothing_item_model.dart';
+import 'package:test_app/screens/user_input.dart';
 
 class StylingPage extends StatefulWidget {
   const StylingPage({super.key});
@@ -87,7 +88,17 @@ class _StylingPageState extends State<StylingPage> {
             Padding(
               padding: const EdgeInsets.only(bottom: 10.0),
               child: ElevatedButton(
-                onPressed: _handleDressMePressed,
+                onPressed: () async {
+                  final prefs = await Navigator.of(context).push<Map<String, String>>(
+                    MaterialPageRoute(
+                      builder: (_) => const UserPreferencesPage(),
+                    ),
+                  );
+                  if (prefs != null) {
+                    debugPrint('User Preferences: $prefs');
+                    await _handleDressMePressed();
+                  }
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.purple[100],
                   foregroundColor: Colors.black,

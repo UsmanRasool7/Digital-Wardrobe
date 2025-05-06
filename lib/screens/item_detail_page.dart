@@ -49,7 +49,7 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
           );
         } else if (snapshot.hasError) {
           return Scaffold(
-            body: Center(child: Text('Error: ${snapshot.error}')),
+            body: Center(child: Text('Error: \${snapshot.error}')),
           );
         } else if (!snapshot.hasData) {
           return const Scaffold(
@@ -93,7 +93,7 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
               Expanded(
                 child: ClipRRect(
                   borderRadius:
-                      const BorderRadius.vertical(bottom: Radius.circular(16)),
+                  const BorderRadius.vertical(bottom: Radius.circular(16)),
                   child: imageWidget,
                 ),
               ),
@@ -109,35 +109,35 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (clothingItem.styleTags != null)
+                        if (clothingItem.styleTag != null)
                           Row(
                             children: [
                               const Icon(Icons.style, color: Colors.teal),
                               const SizedBox(width: 8),
                               Text(
-                                'Style: ${clothingItem.styleTags!.join(', ')}',
+                                'Style: \${clothingItem.styleTag}',
                                 style: Theme.of(context).textTheme.bodyLarge,
                               ),
                             ],
                           ),
-                        if (clothingItem.moodTags != null)
+                        if (clothingItem.moodTag != null)
                           Row(
                             children: [
                               const Icon(Icons.mood, color: Colors.teal),
                               const SizedBox(width: 8),
                               Text(
-                                'Mood: ${clothingItem.moodTags!.join(', ')}',
+                                'Mood: \${clothingItem.moodTag}',
                                 style: Theme.of(context).textTheme.bodyLarge,
                               ),
                             ],
                           ),
-                        if (clothingItem.occasionTags != null)
+                        if (clothingItem.occasionTag != null)
                           Row(
                             children: [
                               const Icon(Icons.event, color: Colors.teal),
                               const SizedBox(width: 8),
                               Text(
-                                'Occasion: ${clothingItem.occasionTags!.join(', ')}',
+                                'Occasion: \${clothingItem.occasionTag}',
                                 style: Theme.of(context).textTheme.bodyLarge,
                               ),
                             ],
@@ -149,19 +149,22 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                                   color: Colors.teal),
                               const SizedBox(width: 8),
                               Text(
-                                  'Price: \$${clothingItem.priceTag!.toStringAsFixed(2)}',
-                                  style: Theme.of(context).textTheme.bodyLarge),
+                                  'Price: \$\${clothingItem.priceTag!.toStringAsFixed(2)}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge),
                             ],
                           ),
-                        if (clothingItem.colorTags != null &&
-                            clothingItem.colorTags!.isNotEmpty)
+                        if (clothingItem.colorTag != null)
                           Row(
                             children: [
                               const Icon(Icons.color_lens, color: Colors.teal),
                               const SizedBox(width: 8),
                               Text(
-                                  'Colors: ${clothingItem.colorTags!.join(', ')}',
-                                  style: Theme.of(context).textTheme.bodyLarge),
+                                  'Color: \${clothingItem.colorTag}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge),
                             ],
                           ),
                         if (clothingItem.fitTag != null)
@@ -169,8 +172,10 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                             children: [
                               const Icon(Icons.checkroom, color: Colors.teal),
                               const SizedBox(width: 8),
-                              Text('Fit: ${clothingItem.fitTag!}',
-                                  style: Theme.of(context).textTheme.bodyLarge),
+                              Text('Fit: \${clothingItem.fitTag}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge),
                             ],
                           ),
                         if (clothingItem.weatherTypeTag != null)
@@ -178,8 +183,10 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                             children: [
                               const Icon(Icons.wb_sunny, color: Colors.teal),
                               const SizedBox(width: 8),
-                              Text('Weather: ${clothingItem.weatherTypeTag!}',
-                                  style: Theme.of(context).textTheme.bodyLarge),
+                              Text('Weather: \${clothingItem.weatherTypeTag}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge),
                             ],
                           ),
                         if (clothingItem.culturalInfluenceTag != null)
@@ -188,8 +195,10 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                               const Icon(Icons.public, color: Colors.teal),
                               const SizedBox(width: 8),
                               Text(
-                                  'Cultural Influence: ${clothingItem.culturalInfluenceTag!}',
-                                  style: Theme.of(context).textTheme.bodyLarge),
+                                  'Cultural Influence: \${clothingItem.culturalInfluenceTag}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge),
                             ],
                           ),
                         if (clothingItem.wearTypeTag != null)
@@ -198,8 +207,10 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                               const Icon(Icons.category, color: Colors.teal),
                               const SizedBox(width: 8),
                               Text(
-                                  'Wear Type: ${clothingItem.wearTypeTag!.name}',
-                                  style: Theme.of(context).textTheme.bodyLarge),
+                                  'Wear Type: \${clothingItem.wearTypeTag!.name}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge),
                             ],
                           ),
                       ],
