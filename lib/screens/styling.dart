@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:test_app/widgets/custom_bottom_nav.dart';
 import 'package:test_app/repositories/clothing_item_repository.dart';
 import 'package:test_app/models/clothing_item_model.dart';
@@ -353,7 +352,9 @@ class _StylingPageState extends State<StylingPage> {
       if (it.colorTag != null && tags.contains(it.colorTag!)) score++;
       if (it.fitTag != null && tags.contains(it.fitTag!)) score++;
       if (it.culturalInfluenceTag != null &&
-          tags.contains(it.culturalInfluenceTag!)) score++;
+          tags.contains(it.culturalInfluenceTag!)) {
+        score++;
+      }
       if (score > bestScore) {
         bestScore = score;
         best = it;

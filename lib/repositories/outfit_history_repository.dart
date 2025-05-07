@@ -12,12 +12,18 @@ class OutfitHistoryRepository {
   Future<List<OutfitHistory>> getUserOutfitHistory(String userId) async {
     final snapshot = await outfitCollection
         .where('user_id', isEqualTo: userId)
-        .orderBy('created_at', descending: true)
         .get();
 
-    return snapshot.docs.map((doc) {
-      return OutfitHistory.fromMap(doc.id, doc.data() as Map<String, dynamic>);
+    final list = snapshot.docs.map((doc) {
+      return OutfitHistory.fromMap(
+        doc.id,
+        doc.data()! as Map<String, dynamic>,
+      );
     }).toList();
+
+    // Sort by createdAt descending
+    list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return list;
   }
 
   Future<void> deleteOutfitHistory(String docId) async {
