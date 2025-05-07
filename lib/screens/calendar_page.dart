@@ -54,7 +54,7 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   Future<void> fetchWeatherForDate(DateTime date) async {
-    final String apiKey = '94abe65ce4454ca00732e54f17071b2e';
+    final String apiKey = 'your api key';
     final String city = 'Lahore'; // You can make this dynamic
     final url =
         'https://api.openweathermap.org/data/2.5/weather?q=$city&appid=$apiKey&units=metric';
