@@ -10,6 +10,7 @@ import 'package:test_app/repositories/outfit_history_repository.dart';
 import 'package:test_app/screens/user_input.dart';
 import 'package:http/http.dart' as http;
 
+
 class StylingPage extends StatefulWidget {
   const StylingPage({super.key});
 
@@ -33,6 +34,28 @@ class _StylingPageState extends State<StylingPage> {
   ClothingItemModel? _selectedTop;
   ClothingItemModel? _selectedBottom;
   ClothingItemModel? _selectedShoes;
+
+  double? _currentTemperature;
+
+  Future<void> _fetchCurrentTemperature(String cityName) async {
+    const apiKey = '94abe65ce4454ca00732e54f17071b2e'; // Replace with your OpenWeatherMap API key
+    final url = Uri.parse(
+      'https://api.openweathermap.org/data/2.5/weather?q=$cityName&appid=$apiKey&units=metric',
+    );
+
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final temp = data['main']['temp'];
+        _currentTemperature = (temp as num).toDouble();
+      } else {
+        throw HttpException('Failed to load temperature');
+      }
+    } catch (e) {
+      debugPrint('Error fetching temperature: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -342,14 +365,34 @@ class _StylingPageState extends State<StylingPage> {
 
   Future<void> _handleDressMePressed(Map<String, String> userPrefs) async {
     try {
+      await _fetchCurrentTemperature('Lahore');
       final user = FirebaseAuth.instance.currentUser!;
       final items = await _clothingRepo.getUserClothingItems(user.uid);
+
+      String weatherCategory;
+      if (_currentTemperature == null) {
+        weatherCategory = 'All-season';
+      } else if (_currentTemperature! >= 25) {
+        weatherCategory = 'Summer';
+      } else if (_currentTemperature! >= 10) {
+        weatherCategory = 'Winter';
+      } else {
+        weatherCategory = 'Winter'; 
+      }
+
+      final filteredItems = items.where((item) {
+        final tag = item.weatherTypeTag;
+        return tag == 'All-season' || tag == weatherCategory;
+      }).toList();
+      debugPrint('Filtered items: ${filteredItems.length} items found.');
 
       final tops = <ClothingItemModel>[];
       final bottoms = <ClothingItemModel>[];
       final shoes = <ClothingItemModel>[];
-      for (var it in items) {
-        switch (it.wearTypeTag) {
+
+  
+      for (var it in filteredItems) {
+        switch (it.wearTypeTag ) {
           case WearType.topWear:
             tops.add(it);
             break;
