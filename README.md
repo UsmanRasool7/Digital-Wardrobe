@@ -3,7 +3,7 @@
 Digital Wardrobe is an Android app that allows its users to manage their wardrobe and get daily Outfit Suggestions. Powered by Machine Learning Algorithms, Digital Wardrobe uses Flutter for Frontend and Firebase for database management, and authentication. 
 
 # Authentication:
-The app features sleek design for Login, Sign Up, and Forgot Password Pages.
+The app features sleek design for Login, Sign Up, and Forgot Password Pages. A page for recovering lost accounts is also added.
 
 # Calendar
 The application features a calendar that allows users to view and edit Outfits categorized by timeline. It also features a weather integration that allows users to make meaningful wardrobe decisions.
