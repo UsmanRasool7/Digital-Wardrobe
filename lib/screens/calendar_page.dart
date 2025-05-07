@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../widgets/custom_bottom_nav.dart';
+import '../repositories/outfit_history_repository.dart';
+import '../models/outfit_history_table.dart';
 
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
@@ -26,10 +29,16 @@ class _CalendarPageState extends State<CalendarPage> {
   String weatherIcon = '';
   Color weatherColor = Colors.grey;
 
+  // Outfit variables
+  final OutfitHistoryRepository outfitHistoryRepository =
+      OutfitHistoryRepository();
+  List<OutfitHistory> outfitsForSelectedDate = [];
+
   @override
   void initState() {
     super.initState();
     fetchWeatherForDate(selectedDate);
+    fetchOutfitsForDate(selectedDate);
   }
 
   @override
@@ -83,6 +92,29 @@ class _CalendarPageState extends State<CalendarPage> {
     }
   }
 
+  Future<void> fetchOutfitsForDate(DateTime date) async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        print('No user is logged in.');
+        return;
+      }
+
+      final outfits = await outfitHistoryRepository.getUserOutfitHistory(
+        currentUser.uid, // Pass the current user's ID
+        currentUser.uid, // Ensure it matches the logged-in user
+      );
+
+      setState(() {
+        outfitsForSelectedDate = outfits
+            .where((outfit) => isSameDay(outfit.createdAt, date))
+            .toList();
+      });
+    } catch (e) {
+      print('Error fetching outfits: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,7 +133,8 @@ class _CalendarPageState extends State<CalendarPage> {
                         children: [
                           Text(
                             DateFormat('EEEE').format(selectedDate),
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(width: 10),
                           if (weatherDescription.isNotEmpty)
@@ -149,6 +182,8 @@ class _CalendarPageState extends State<CalendarPage> {
                     selectedDate = newDate;
                   });
                   fetchWeatherForDate(newDate);
+                  fetchOutfitsForDate(
+                      newDate); // Fetch outfits for the new date
                 },
                 itemBuilder: (context, index) {
                   DateTime weekStart = _getDateForPage(index);
@@ -166,12 +201,15 @@ class _CalendarPageState extends State<CalendarPage> {
                             selectedDate = day;
                           });
                           fetchWeatherForDate(day);
+                          fetchOutfitsForDate(day);
                         },
                         child: Container(
                           width: 40,
                           margin: const EdgeInsets.symmetric(horizontal: 6),
                           decoration: BoxDecoration(
-                            color: isSelected ? Colors.limeAccent : Colors.transparent,
+                            color: isSelected
+                                ? Colors.limeAccent
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Column(
@@ -190,7 +228,9 @@ class _CalendarPageState extends State<CalendarPage> {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color: isSelected ? Colors.black : Colors.grey[800],
+                                  color: isSelected
+                                      ? Colors.black
+                                      : Colors.grey[800],
                                 ),
                               ),
                             ],
@@ -205,34 +245,52 @@ class _CalendarPageState extends State<CalendarPage> {
 
             const SizedBox(height: 30),
 
-            // Empty Planner
+            // Display outfits for the selected date
             Expanded(
-              child: Column(
-                children: [
-                  const Spacer(),
-                  Container(
-                    width: 300,
-                    height: 300,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const AddItemsPage()),
+              child: outfitsForSelectedDate.isEmpty
+                  ? Column(
+                      children: [
+                        const Spacer(),
+                        Container(
+                          width: 300,
+                          height: 300,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const AddItemsPage()),
+                              );
+                            },
+                            child: const Icon(Icons.add_circle,
+                                color: Colors.blue, size: 60),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        const Text("No items in wardrobe."),
+                        const Text("Add items to start planning."),
+                        const Spacer(),
+                      ],
+                    )
+                  : ListView.builder(
+                      itemCount: outfitsForSelectedDate.length,
+                      itemBuilder: (context, index) {
+                        final outfit = outfitsForSelectedDate[index];
+                        return ListTile(
+                          title: Text(
+                            'Top: (${outfit.top.colorTag}, ${outfit.top.fitTag})\n'
+                            'Bottom: (${outfit.bottom.colorTag}, ${outfit.bottom.fitTag})',
+                          ),
+                          subtitle: Text(
+                            'Footwear: (${outfit.foot.colorTag}, ${outfit.foot.fitTag})',
+                          ),
                         );
                       },
-                      child: const Icon(Icons.add_circle, color: Colors.blue, size: 60),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text("No items in wardrobe."),
-                  const Text("Add items to start planning."),
-                  const Spacer(),
-                ],
-              ),
             ),
           ],
         ),
@@ -259,7 +317,8 @@ class AddItemsPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10),
               child: Stack(
                 alignment: Alignment.center,
                 children: [
@@ -273,7 +332,8 @@ class AddItemsPage extends StatelessWidget {
                   const Center(
                     child: Text(
                       "Add Items",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
@@ -298,14 +358,16 @@ class AddItemsPage extends StatelessWidget {
               padding: const EdgeInsets.only(left: 16.0, top: 10),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 35),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 30, vertical: 35),
                   backgroundColor: Colors.cyanAccent[700],
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.zero,
                   ),
                 ),
                 onPressed: () {},
-                child: const Icon(Icons.camera_alt, color: Colors.black, size: 28),
+                child:
+                    const Icon(Icons.camera_alt, color: Colors.black, size: 28),
               ),
             ),
             const SizedBox(height: 30),
