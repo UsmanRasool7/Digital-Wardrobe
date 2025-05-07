@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:test_app/screens/styling.dart';
 import 'package:test_app/screens/wardrobe_home.dart';
+import 'package:test_app/screens/calendar_page.dart';
 
 class CustomBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -45,7 +46,14 @@ class CustomBottomNav extends StatelessWidget {
               context,
               MaterialPageRoute(builder: (context) => const WardrobeHomePage()),
             );
-          } 
+          }
+          else if(index==0)
+          {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const CalendarPage()),
+            );
+          }
           else {
             onTap(index); // Let parent handle other tabs
           }
@@ -56,7 +64,7 @@ class CustomBottomNav extends StatelessWidget {
         items: [
           BottomNavigationBarItem(
             icon: Icon(
-              Icons.bookmark_border,
+              Icons.calendar_today,
               color: currentIndex == 0 ? Colors.red : Colors.grey,
             ),
             label: '',

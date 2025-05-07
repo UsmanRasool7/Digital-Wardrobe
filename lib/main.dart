@@ -10,6 +10,7 @@ import 'screens/planner_page.dart';
 import 'screens/styling_page.dart';
 import 'screens/wardrobe_page.dart';
 import 'screens/wardrobe_home.dart';
+import 'screens/calendar_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async {
@@ -77,9 +78,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 2;
 
-  final List<Widget> _pages = [PlannerPage(), StylingPage(), WardrobePage()];
+  final List<Widget> _pages = [CalendarPage(), StylingPage(), WardrobeHomePage()];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -97,7 +98,7 @@ class _HomePageState extends State<HomePage> {
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today),
-            label: 'Planner',
+            label: 'Calendar',
           ),
           BottomNavigationBarItem(icon: Icon(Icons.style), label: 'Styling'),
           BottomNavigationBarItem(
