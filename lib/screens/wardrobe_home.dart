@@ -167,7 +167,7 @@ class _WardrobeHomePageState extends State<WardrobeHomePage> {
       ),
       child: Row(children: [
         _toggleButton('Items', 0),
-        _toggleButton('Outfits', 1),
+        //_toggleButton('Outfits', 1),
       ]),
     );
   }

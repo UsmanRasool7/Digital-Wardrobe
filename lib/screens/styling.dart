@@ -21,7 +21,7 @@ class StylingPage extends StatefulWidget {
 class _StylingPageState extends State<StylingPage> {
   int _currentIndex = 1;
   int _selectedTab = 0;
-  final List<String> _tabs = ['Dress Me', 'Canvas', 'Moodboards'];
+  final List<String> _tabs = ['Dress Me'];
   final ClothingItemRepository _clothingRepo = ClothingItemRepository();
   final OutfitHistoryRepository _historyRepo = OutfitHistoryRepository();
 

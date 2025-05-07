@@ -131,11 +131,10 @@ class _SignInPageState extends State<SignInPage> {
                     GestureDetector(
                       onTap: () => Navigator.pushNamed(context, '/signup'),
                       child: const Text(
-                        'Don\'t have an account? Register Here',
+                        'Login to your Account to get started',
                         style: TextStyle(
                           fontSize: 18,
                           color: Colors.black,
-                          decoration: TextDecoration.underline,
                         ),
                       ),
                     ),

@@ -9,45 +9,52 @@ class OutfitHistoryRepository {
     await outfitCollection.add(outfit.toMap());
   }
 
-  Future<List<OutfitHistory>> getUserOutfitHistory(
-      String userId, String loggedInUserId) async {
-    if (userId != loggedInUserId) {
-      return []; // Return an empty list if the user IDs do not match
-    }
-
+  Future<List<OutfitHistory>> getUserOutfitHistory(String userId) async {
     final snapshot = await outfitCollection
-        .where('user_id', isEqualTo: loggedInUserId)
+        .where('user_id', isEqualTo: userId)
         .get();
 
-    final list = snapshot.docs.map((doc) {
-      return OutfitHistory.fromMap(
-        doc.id,
-        doc.data()! as Map<String, dynamic>,
-      );
-    }).toList();
+      final list = snapshot.docs.map((doc) {
+        return OutfitHistory.fromMap(
+          doc.id,
+          doc.data()! as Map<String, dynamic>,
+        );
+      }).toList();
 
-    // Sort by createdAt descending
-    list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return list;
-  }
+      // Sort by createdAt descending
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return list;
+    }
 
   Future<List<OutfitHistory>> getOutfitsByDate(
-      DateTime date, String loggedInUserId) async {
-    final startOfDay =
-        Timestamp.fromDate(DateTime(date.year, date.month, date.day));
+      DateTime date,
+      String loggedInUserId,
+      ) async {
+    // Compute the day’s bounds
+    final startOfDay = Timestamp.fromDate(
+      DateTime(date.year, date.month, date.day),
+    );
     final endOfDay = Timestamp.fromDate(
-        DateTime(date.year, date.month, date.day, 23, 59, 59));
+      DateTime(date.year, date.month, date.day, 23, 59, 59),
+    );
 
+    // Query: filter by user_id (equality), by created_at (range), then order by created_at
     final snapshot = await outfitCollection
+        .where('user_id', isEqualTo: loggedInUserId)
         .where('created_at', isGreaterThanOrEqualTo: startOfDay)
         .where('created_at', isLessThanOrEqualTo: endOfDay)
-        .where('user_id', isEqualTo: loggedInUserId)
+        .orderBy('created_at', descending: true)
         .get();
 
     return snapshot.docs.map((doc) {
-      return OutfitHistory.fromMap(doc.id, doc.data() as Map<String, dynamic>);
+      return OutfitHistory.fromMap(
+        doc.id,
+        doc.data() as Map<String, dynamic>,
+      );
     }).toList();
   }
+
+
 
   Future<void> deleteOutfitHistory(String docId) async {
     await outfitCollection.doc(docId).delete();

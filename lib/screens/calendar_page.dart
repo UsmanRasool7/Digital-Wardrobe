@@ -1,12 +1,30 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../widgets/custom_bottom_nav.dart';
 import '../repositories/outfit_history_repository.dart';
 import '../models/outfit_history_table.dart';
+import '../models/clothing_item_model.dart';
+
+class OutfitDisplay {
+  final OutfitHistory history;
+  final ClothingItemModel topModel;
+  final ClothingItemModel bottomModel;
+  final ClothingItemModel footModel;
+
+  OutfitDisplay({
+    required this.history,
+    required this.topModel,
+    required this.bottomModel,
+    required this.footModel,
+  });
+}
 
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
@@ -17,11 +35,9 @@ class CalendarPage extends StatefulWidget {
 
 class _CalendarPageState extends State<CalendarPage> {
   DateTime selectedDate = DateTime.now();
-
-  final PageController pageController = PageController(initialPage: 1000);
-  final DateTime initialWeekStart = DateTime.now().subtract(
-    Duration(days: DateTime.now().weekday - 1),
-  );
+  final pageController = PageController(initialPage: 1000);
+  late final DateTime initialWeekStart = DateTime.now()
+      .subtract(Duration(days: DateTime.now().weekday - 1));
   int selectedIndex = 0;
 
   String weatherDescription = '';
@@ -29,16 +45,18 @@ class _CalendarPageState extends State<CalendarPage> {
   String weatherIcon = '';
   Color weatherColor = Colors.grey;
 
-  // Outfit variables
-  final OutfitHistoryRepository outfitHistoryRepository =
-      OutfitHistoryRepository();
-  List<OutfitHistory> outfitsForSelectedDate = [];
+  final _repo = OutfitHistoryRepository();
+  List<OutfitDisplay> outfitsForSelectedDate = [];
 
   @override
   void initState() {
     super.initState();
-    fetchWeatherForDate(selectedDate);
-    fetchOutfitsForDate(selectedDate);
+    _loadAllForDate(selectedDate);
+  }
+
+  void _loadAllForDate(DateTime date) {
+    fetchWeatherForDate(date);
+    fetchOutfitsForDate(date);
   }
 
   @override
@@ -47,35 +65,30 @@ class _CalendarPageState extends State<CalendarPage> {
     super.dispose();
   }
 
-  DateTime _getDateForPage(int pageIndex) {
-    int weekOffset = pageIndex - 1000;
-    return initialWeekStart.add(Duration(days: weekOffset * 7));
-  }
+  DateTime _getDateForPage(int pageIndex) =>
+      initialWeekStart.add(Duration(days: (pageIndex - 1000) * 7));
 
   List<DateTime> _getWeekDates(DateTime refDate) {
-    final startOfWeek = refDate.subtract(Duration(days: refDate.weekday - 1));
-    return List.generate(7, (i) => startOfWeek.add(Duration(days: i)));
+    final start = refDate.subtract(Duration(days: refDate.weekday - 1));
+    return List.generate(7, (i) => start.add(Duration(days: i)));
   }
 
-  bool isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
   Future<void> fetchWeatherForDate(DateTime date) async {
-    final String apiKey = '94abe65ce4454ca00732e54f17071b2e';
-    final String city = 'Lahore';
+    const apiKey = '94abe65ce4454ca00732e54f17071b2e';
+    const city = 'Lahore';
     final url =
         'https://api.openweathermap.org/data/2.5/weather?q=$city&appid=$apiKey&units=metric';
-
     try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+      final resp = await http.get(Uri.parse(url));
+      if (resp.statusCode == 200) {
+        final data = json.decode(resp.body);
         setState(() {
           weatherDescription = data['weather'][0]['description'];
           temperature = data['main']['temp'];
           weatherIcon = data['weather'][0]['icon'];
-
           if (weatherDescription.contains('rain')) {
             weatherColor = Colors.blueGrey;
           } else if (weatherDescription.contains('clear')) {
@@ -88,30 +101,75 @@ class _CalendarPageState extends State<CalendarPage> {
         });
       }
     } catch (e) {
-      print('Weather fetch error: $e');
+      debugPrint('Weather fetch error: $e');
     }
   }
 
   Future<void> fetchOutfitsForDate(DateTime date) async {
     try {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        print('No user is logged in.');
-        return;
-      }
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
 
-      final outfits = await outfitHistoryRepository.getUserOutfitHistory(
-        currentUser.uid, // Pass the current user's ID
-        currentUser.uid, // Ensure it matches the logged-in user
-      );
+      final historyList = await _repo.getOutfitsByDate(date, user.uid);
+      final displays = await Future.wait(historyList.map((history) async {
+        final topSnap = await FirebaseFirestore.instance
+            .collection('clothing_items')
+            .doc(history.top.itemId)
+            .get();
+        final bottomSnap = await FirebaseFirestore.instance
+            .collection('clothing_items')
+            .doc(history.bottom.itemId)
+            .get();
+        final footSnap = await FirebaseFirestore.instance
+            .collection('clothing_items')
+            .doc(history.foot.itemId)
+            .get();
 
-      setState(() {
-        outfitsForSelectedDate = outfits
-            .where((outfit) => isSameDay(outfit.createdAt, date))
-            .toList();
-      });
+        final topModel = ClothingItemModel.fromMap(
+            topSnap.data()! as Map<String, dynamic>);
+        final bottomModel = ClothingItemModel.fromMap(
+            bottomSnap.data()! as Map<String, dynamic>);
+        final footModel = ClothingItemModel.fromMap(
+            footSnap.data()! as Map<String, dynamic>);
+
+        return OutfitDisplay(
+          history: history,
+          topModel: topModel,
+          bottomModel: bottomModel,
+          footModel: footModel,
+        );
+      }));
+
+      setState(() => outfitsForSelectedDate = displays);
     } catch (e) {
-      print('Error fetching outfits: $e');
+      debugPrint('Error fetching outfits for $date: $e');
+    }
+  }
+
+  Widget _buildImage(String url) {
+    if (url.startsWith('http')) {
+      return CachedNetworkImage(
+        imageUrl: url,
+        width: 80,
+        height: 80,
+        fit: BoxFit.cover,
+        placeholder: (_, __) => const Center(child: CircularProgressIndicator()),
+        errorWidget: (_, __, ___) => const Icon(Icons.broken_image, size: 40),
+      );
+    } else if (url.isNotEmpty) {
+      return Image.file(
+        File(url),
+        width: 80,
+        height: 80,
+        fit: BoxFit.cover,
+      );
+    } else {
+      return Container(
+        width: 80,
+        height: 80,
+        color: Colors.grey[200],
+        child: const Icon(Icons.image_not_supported),
+      );
     }
   }
 
@@ -121,7 +179,7 @@ class _CalendarPageState extends State<CalendarPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header
+            // — Header with date & weather
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(
@@ -129,35 +187,30 @@ class _CalendarPageState extends State<CalendarPage> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Text(
-                            DateFormat('EEEE').format(selectedDate),
-                            style: const TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(width: 10),
-                          if (weatherDescription.isNotEmpty)
-                            Row(
-                              children: [
-                                Image.network(
-                                  'http://openweathermap.org/img/wn/$weatherIcon.png',
-                                  width: 35,
-                                  height: 35,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${temperature.toStringAsFixed(1)}°C',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: weatherColor,
-                                  ),
-                                ),
-                              ],
+                      Row(children: [
+                        Text(
+                          DateFormat('EEEE').format(selectedDate),
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(width: 10),
+                        if (weatherDescription.isNotEmpty)
+                          Row(children: [
+                            Image.network(
+                              'http://openweathermap.org/img/wn/$weatherIcon.png',
+                              width: 35,
+                              height: 35,
                             ),
-                        ],
-                      ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${temperature.toStringAsFixed(1)}°C',
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: weatherColor),
+                            ),
+                          ]),
+                      ]),
                       Text(
                         DateFormat('d MMM y').format(selectedDate),
                         style: const TextStyle(color: Colors.grey),
@@ -170,44 +223,33 @@ class _CalendarPageState extends State<CalendarPage> {
               ),
             ),
 
-            // Week Calendar
+            // — Week calendar (unchanged) …
             SizedBox(
               height: 80,
               child: PageView.builder(
                 controller: pageController,
-                scrollDirection: Axis.horizontal,
-                onPageChanged: (index) {
-                  DateTime newDate = _getDateForPage(index);
-                  setState(() {
-                    selectedDate = newDate;
-                  });
-                  fetchWeatherForDate(newDate);
-                  fetchOutfitsForDate(
-                      newDate); // Fetch outfits for the new date
+                onPageChanged: (i) {
+                  final newDate = _getDateForPage(i);
+                  setState(() => selectedDate = newDate);
+                  _loadAllForDate(newDate);
                 },
-                itemBuilder: (context, index) {
-                  DateTime weekStart = _getDateForPage(index);
-                  List<DateTime> week = _getWeekDates(weekStart);
-
+                itemBuilder: (c, i) {
+                  final week = _getWeekDates(_getDateForPage(i));
                   return Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: week.map((day) {
-                      bool isToday = isSameDay(day, DateTime.now());
-                      bool isSelected = isSameDay(day, selectedDate);
-
+                      final isToday = _isSameDay(day, DateTime.now());
+                      final isSel = _isSameDay(day, selectedDate);
                       return GestureDetector(
                         onTap: () {
-                          setState(() {
-                            selectedDate = day;
-                          });
-                          fetchWeatherForDate(day);
-                          fetchOutfitsForDate(day);
+                          setState(() => selectedDate = day);
+                          _loadAllForDate(day);
                         },
                         child: Container(
                           width: 40,
                           margin: const EdgeInsets.symmetric(horizontal: 6),
                           decoration: BoxDecoration(
-                            color: isSelected
+                            color: isSel
                                 ? Colors.limeAccent
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(12),
@@ -228,7 +270,7 @@ class _CalendarPageState extends State<CalendarPage> {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color: isSelected
+                                  color: isSel
                                       ? Colors.black
                                       : Colors.grey[800],
                                 ),
@@ -243,54 +285,46 @@ class _CalendarPageState extends State<CalendarPage> {
               ),
             ),
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
 
-            // Display outfits for the selected date
+            // — Display outfits with safe image loading
             Expanded(
               child: outfitsForSelectedDate.isEmpty
-                  ? Column(
-                      children: [
-                        const Spacer(),
-                        Container(
-                          width: 300,
-                          height: 300,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const AddItemsPage()),
-                              );
-                            },
-                            child: const Icon(Icons.add_circle,
-                                color: Colors.blue, size: 60),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        const Text("No items in wardrobe."),
-                        const Text("Add items to start planning."),
-                        const Spacer(),
-                      ],
-                    )
+                  ? Center(
+                child: Text(
+                  'No outfits worn on this date.',
+                  style: TextStyle(
+                      fontSize: 16, color: Colors.grey[600]),
+                ),
+              )
                   : ListView.builder(
-                      itemCount: outfitsForSelectedDate.length,
-                      itemBuilder: (context, index) {
-                        final outfit = outfitsForSelectedDate[index];
-                        return ListTile(
-                          title: Text(
-                            'Top: (${outfit.top.colorTag}, ${outfit.top.fitTag})\n'
-                            'Bottom: (${outfit.bottom.colorTag}, ${outfit.bottom.fitTag})',
-                          ),
-                          subtitle: Text(
-                            'Footwear: (${outfit.foot.colorTag}, ${outfit.foot.fitTag})',
-                          ),
-                        );
-                      },
+                itemCount: outfitsForSelectedDate.length,
+                itemBuilder: (context, i) {
+                  final o = outfitsForSelectedDate[i];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 8, horizontal: 16),
+                    child: Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            _buildImage(o.topModel.imageUrl),
+                            _buildImage(o.bottomModel.imageUrl),
+                            _buildImage(o.footModel.imageUrl),
+                          ],
+                        ),
+                      ),
                     ),
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -298,87 +332,6 @@ class _CalendarPageState extends State<CalendarPage> {
       bottomNavigationBar: CustomBottomNav(
         currentIndex: selectedIndex,
         onTap: (i) => setState(() => selectedIndex = i),
-      ),
-    );
-  }
-}
-
-class AddItemsPage extends StatelessWidget {
-  final DateTime? selectedDate;
-
-  const AddItemsPage({super.key, this.selectedDate});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: const Icon(Icons.close, size: 28),
-                    ),
-                  ),
-                  const Center(
-                    child: Text(
-                      "Add Items",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.only(left: 48.0),
-              child: const Icon(Icons.camera_alt, color: Colors.blue, size: 32),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.only(left: 16.0),
-              child: const Text(
-                "Camera roll",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-              ),
-            ),
-            const SizedBox(height: 10),
-            const Divider(thickness: 1, color: Colors.grey),
-            Padding(
-              padding: const EdgeInsets.only(left: 16.0, top: 10),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 30, vertical: 35),
-                  backgroundColor: Colors.cyanAccent[700],
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.zero,
-                  ),
-                ),
-                onPressed: () {},
-                child:
-                    const Icon(Icons.camera_alt, color: Colors.black, size: 28),
-              ),
-            ),
-            const SizedBox(height: 30),
-            const Center(
-              child: Text(
-                "Photo library permission denied",
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
