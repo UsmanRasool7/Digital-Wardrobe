@@ -2,9 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:test_app/widgets/custom_bottom_nav.dart';
 import 'package:test_app/repositories/clothing_item_repository.dart';
 import 'package:test_app/models/clothing_item_model.dart';
+import 'package:test_app/models/outfit_history_table.dart';
+import 'package:test_app/repositories/outfit_history_repository.dart';
 import 'package:test_app/screens/user_input.dart';
 import 'package:http/http.dart' as http;
 
@@ -20,11 +23,17 @@ class _StylingPageState extends State<StylingPage> {
   int _selectedTab = 0;
   final List<String> _tabs = ['Dress Me', 'Canvas', 'Moodboards'];
   final ClothingItemRepository _clothingRepo = ClothingItemRepository();
+  final OutfitHistoryRepository _historyRepo = OutfitHistoryRepository();
 
-  // <-- NEW: hold your recommended models
-  List<ClothingItemModel> _recommendedTops    = [];
+  // recommended pools
+  List<ClothingItemModel> _recommendedTops = [];
   List<ClothingItemModel> _recommendedBottoms = [];
-  List<ClothingItemModel> _recommendedShoes   = [];
+  List<ClothingItemModel> _recommendedShoes = [];
+
+  // user’s one‑of‑each selection
+  ClothingItemModel? _selectedTop;
+  ClothingItemModel? _selectedBottom;
+  ClothingItemModel? _selectedShoes;
 
   @override
   Widget build(BuildContext context) {
@@ -39,19 +48,19 @@ class _StylingPageState extends State<StylingPage> {
               // Top Tabs
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(_tabs.length, (index) {
+                children: List.generate(_tabs.length, (i) {
                   return GestureDetector(
-                    onTap: () => setState(() => _selectedTab = index),
+                    onTap: () => setState(() => _selectedTab = i),
                     child: Column(
                       children: [
                         Text(
-                          _tabs[index],
+                          _tabs[i],
                           style: TextStyle(
-                            fontWeight: _selectedTab == index
+                            fontSize: 16,
+                            fontWeight: _selectedTab == i
                                 ? FontWeight.bold
                                 : FontWeight.normal,
-                            fontSize: 16,
-                            color: _selectedTab == index ? Colors.black : Colors.grey,
+                            color: _selectedTab == i ? Colors.black : Colors.grey,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -59,7 +68,9 @@ class _StylingPageState extends State<StylingPage> {
                           duration: const Duration(milliseconds: 300),
                           height: 2,
                           width: 40,
-                          color: _selectedTab == index ? Colors.black : Colors.transparent,
+                          color: _selectedTab == i
+                              ? Colors.black
+                              : Colors.transparent,
                         ),
                       ],
                     ),
@@ -70,22 +81,57 @@ class _StylingPageState extends State<StylingPage> {
 
               if (_selectedTab == 0) ...[
                 _buildAddItem('Add Tops'),
-                _buildClothingList(_recommendedTops),
+                _buildClothingList(
+                  _recommendedTops,
+                  _selectedTop,
+                      (itm) => _selectedTop = itm,
+                ),
                 const SizedBox(height: 20),
 
                 _buildAddItem('Add Bottoms'),
-                _buildClothingList(_recommendedBottoms),
+                _buildClothingList(
+                  _recommendedBottoms,
+                  _selectedBottom,
+                      (itm) => _selectedBottom = itm,
+                ),
                 const SizedBox(height: 20),
 
                 _buildAddItem('Add Footwear'),
-                _buildClothingList(_recommendedShoes),
+                _buildClothingList(
+                  _recommendedShoes,
+                  _selectedShoes,
+                      (itm) => _selectedShoes = itm,
+                ),
                 const SizedBox(height: 30),
+
+                // Save Outfit Button
+                Center(
+                  child: ElevatedButton(
+                    onPressed: _saveOutfit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green[300],
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      minimumSize: const Size(200, 50),
+                    ),
+                    child: const Text('Save Outfit', style: TextStyle(fontSize: 18)),
+                  ),
+                ),
+                const SizedBox(height: 20),
               ],
 
               Center(
                 child: ElevatedButton(
                   onPressed: () async {
-                    final prefs = await Navigator.of(context).push<Map<String, String>>(
+                    final topUrl = _selectedTop?.imageUrl;
+                    final bottomUrl = _selectedBottom?.imageUrl;
+                    final shoeUrl = _selectedShoes?.imageUrl;
+                    debugPrint('Selected URLs:\nTop: \$topUrl\nBottom: \$bottomUrl\nShoes: \$shoeUrl');
+
+                    final prefs = await Navigator.of(context).push<
+                        Map<String, String>>(
                       MaterialPageRoute(
                         builder: (_) => const UserPreferencesPage(),
                       ),
@@ -110,35 +156,107 @@ class _StylingPageState extends State<StylingPage> {
           ),
         ),
       ),
-
       bottomNavigationBar: CustomBottomNav(
         currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        onTap: (i) => setState(() => _currentIndex = i),
       ),
     );
   }
 
-// Builds a list of clothing items (tops, bottoms, or footwear)
-  Widget _buildClothingList(List<ClothingItemModel> items) {
-    if (items.isEmpty) return const SizedBox.shrink();
+  Future<void> _saveOutfit() async {
+    if (_selectedTop == null || _selectedBottom == null || _selectedShoes == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select top, bottom, and footwear.')),
+      );
+      return;
+    }
 
+    final user = FirebaseAuth.instance.currentUser!;
+    final now = DateTime.now();
+
+    final history = OutfitHistory(
+      id: '', // Firestore will assign
+      userId: user.uid,
+      createdAt: now,
+      top: ClothingItem(
+        itemId: _selectedTop!.id,
+        colorTag: _selectedTop!.colorTag ?? '',
+        fitTag: _selectedTop!.fitTag ?? '',
+      ),
+      bottom: ClothingItem(
+        itemId: _selectedBottom!.id,
+        colorTag: _selectedBottom!.colorTag ?? '',
+        fitTag: _selectedBottom!.fitTag ?? '',
+      ),
+      foot: ClothingItem(
+        itemId: _selectedShoes!.id,
+        colorTag: _selectedShoes!.colorTag ?? '',
+        fitTag: _selectedShoes!.fitTag ?? '',
+      ),
+    );
+
+    try {
+      await _historyRepo.addOutfitHistory(history);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Outfit saved successfully!')),
+      );
+      // reset selections and recommendations to "reload" page
+      setState(() {
+        _selectedTop = null;
+        _selectedBottom = null;
+        _selectedShoes = null;
+        _recommendedTops = [];
+        _recommendedBottoms = [];
+        _recommendedShoes = [];
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving outfit: \$e')),
+      );
+    }
+  }
+
+  /// Builds a selectable list. onSelected just assigns the model;
+  /// we call setState here so that the highlight updates instantly.
+  Widget _buildClothingList(
+      List<ClothingItemModel> items,
+      ClothingItemModel? selectedItem,
+      void Function(ClothingItemModel) onSelected,
+      ) {
+    if (items.isEmpty) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(8),
       child: Wrap(
         spacing: 10,
         runSpacing: 10,
         children: items.map((item) {
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: _buildImageWidget(item.imageUrl),
+          final isSel = item == selectedItem;
+          return Material(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(
+                color: isSel ? Colors.blueAccent : Colors.transparent,
+                width: 3,
+              ),
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () {
+                setState(() { onSelected(item); });
+              },
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(7),
+                child: _buildImageWidget(item.imageUrl),
+              ),
+            ),
           );
         }).toList(),
       ),
     );
   }
 
-  Widget _buildImageWidget(String imageUrl) {
-    if (imageUrl.isEmpty) {
+  Widget _buildImageWidget(String url) {
+    if (url.isEmpty) {
       return Container(
         width: 100,
         height: 100,
@@ -146,53 +264,42 @@ class _StylingPageState extends State<StylingPage> {
         child: const Icon(Icons.image_not_supported, color: Colors.grey),
       );
     }
-
-    if (imageUrl.startsWith('http')) {
-      // Handling Network Image
+    if (url.startsWith('http')) {
       return Image.network(
-        imageUrl,
-        height: 100,
+        url,
         width: 100,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Container(
-            width: 100,
-            height: 100,
-            color: Colors.grey[300],
-            child: const Center(child: CircularProgressIndicator()),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            width: 100,
-            height: 100,
-            color: Colors.grey[300],
-            child: const Icon(Icons.broken_image, color: Colors.red),
-          );
-        },
-      );
-    } else {
-      // Handling Local Image
-      return Image.file(
-        File(imageUrl),
         height: 100,
-        width: 100,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            width: 100,
-            height: 100,
-            color: Colors.grey[300],
-            child: const Icon(Icons.broken_image, color: Colors.red),
-          );
-        },
+        loadingBuilder: (c, child, prog) =>
+        prog == null ? child : Container(
+          width: 100,
+          height: 100,
+          color: Colors.grey[300],
+          child: const Center(child: CircularProgressIndicator()),
+        ),
+        errorBuilder: (c, e, st) => Container(
+          width: 100,
+          height: 100,
+          color: Colors.grey[300],
+          child: const Icon(Icons.broken_image, color: Colors.red),
+        ),
       );
     }
+    return Image.file(
+      File(url),
+      width: 100,
+      height: 100,
+      fit: BoxFit.cover,
+      errorBuilder: (c, e, st) => Container(
+        width: 100,
+        height: 100,
+        color: Colors.grey[300],
+        child: const Icon(Icons.broken_image, color: Colors.red),
+      ),
+    );
   }
 
-
-  Widget _buildAddItem(String text) {
+  Widget _buildAddItem(String label) {
     return Column(
       children: [
         Container(
@@ -206,32 +313,27 @@ class _StylingPageState extends State<StylingPage> {
           ),
         ),
         const SizedBox(height: 8),
-        Text(text, style: const TextStyle(fontSize: 16)),
+        Text(label, style: const TextStyle(fontSize: 16)),
       ],
     );
   }
 
-  /// Finds the ClothingItemModel in [pool] whose tags best match [tags].
   ClothingItemModel? _findBestMatch(
       List<String> tags, List<ClothingItemModel> pool) {
     ClothingItemModel? best;
     int bestScore = -1;
-
-    for (var item in pool) {
+    for (var it in pool) {
       int score = 0;
-      if (item.styleTag != null &&
-          tags.contains(item.styleTag!)) score++;
-      if (item.moodTag != null && tags.contains(item.moodTag!)) score++;
-      if (item.occasionTag != null &&
-          tags.contains(item.occasionTag!)) score++;
-      if (item.colorTag != null && tags.contains(item.colorTag!)) score++;
-      if (item.fitTag != null && tags.contains(item.fitTag!)) score++;
-      if (item.culturalInfluenceTag != null &&
-          tags.contains(item.culturalInfluenceTag!)) score++;
-
+      if (it.styleTag != null && tags.contains(it.styleTag!)) score++;
+      if (it.moodTag != null && tags.contains(it.moodTag!)) score++;
+      if (it.occasionTag != null && tags.contains(it.occasionTag!)) score++;
+      if (it.colorTag != null && tags.contains(it.colorTag!)) score++;
+      if (it.fitTag != null && tags.contains(it.fitTag!)) score++;
+      if (it.culturalInfluenceTag != null &&
+          tags.contains(it.culturalInfluenceTag!)) score++;
       if (score > bestScore) {
         bestScore = score;
-        best = item;
+        best = it;
       }
     }
     return best;
@@ -239,15 +341,12 @@ class _StylingPageState extends State<StylingPage> {
 
   Future<void> _handleDressMePressed(Map<String, String> userPrefs) async {
     try {
-      // 1) fetch all items
       final user = FirebaseAuth.instance.currentUser!;
       final items = await _clothingRepo.getUserClothingItems(user.uid);
 
-      // 2) split into three pools
       final tops = <ClothingItemModel>[];
       final bottoms = <ClothingItemModel>[];
       final shoes = <ClothingItemModel>[];
-
       for (var it in items) {
         switch (it.wearTypeTag) {
           case WearType.topWear:
@@ -260,22 +359,22 @@ class _StylingPageState extends State<StylingPage> {
             shoes.add(it);
             break;
           default:
-            break;
         }
       }
 
-      // 3) build the tag‐vectors to send
       List<Map<String, String>> mapOf(List<ClothingItemModel> pool) =>
-          pool.map((it) => {
+          pool
+              .map((it) => {
             'styleTags': it.styleTag ?? '',
             'moodTags': it.moodTag ?? '',
             'occasionTags': it.occasionTag ?? '',
             'colorTags': it.colorTag ?? '',
             'fitTag': it.fitTag ?? '',
             'culturalInfluenceTag': it.culturalInfluenceTag ?? '',
-          }).toList();
+          })
+              .toList();
 
-      final response = await http.post(
+      final resp = await http.post(
         Uri.parse('http://10.0.2.2:8000/recommend'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
@@ -291,15 +390,12 @@ class _StylingPageState extends State<StylingPage> {
           'foot_items': mapOf(shoes),
         }),
       );
-
-      if (response.statusCode != 200) {
-        throw HttpException(
-            'Server error: ${response.statusCode}');
+      debugPrint('Result: \${resp.body}');
+      if (resp.statusCode != 200) {
+        throw HttpException('Server error: \${resp.statusCode}');
       }
 
-      final result = jsonDecode(response.body) as Map<String, dynamic>;
-
-      // 4) parse into List<List<String>>
+      final result = jsonDecode(resp.body) as Map<String, dynamic>;
       final recTops = (result['upper_wears'] as List)
           .map((e) => List<String>.from(e))
           .toList();
@@ -310,7 +406,6 @@ class _StylingPageState extends State<StylingPage> {
           .map((e) => List<String>.from(e))
           .toList();
 
-      // 5) find best model matches
       final displayTops = recTops
           .map((tags) => _findBestMatch(tags, tops))
           .whereType<ClothingItemModel>()
@@ -324,20 +419,17 @@ class _StylingPageState extends State<StylingPage> {
           .whereType<ClothingItemModel>()
           .toList();
 
-      // 6) update UI
       setState(() {
         _recommendedTops = displayTops;
         _recommendedBottoms = displayBottoms;
         _recommendedShoes = displayShoes;
       });
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Got ${displayTops.length} outfits!')),
+        SnackBar(content: Text('Got \${displayTops.length} outfits!')),
       );
     } on SocketException {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Network error – please check your connection')),
+        const SnackBar(content: Text('Network error – please check your connection')),
       );
     } on HttpException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
