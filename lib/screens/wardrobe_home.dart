@@ -15,6 +15,7 @@ import 'wardrobe_insights_page.dart';
 import 'item_detail_page.dart';
 import 'add_item_page.dart';
 
+
 class WardrobeHomePage extends StatefulWidget {
   const WardrobeHomePage({Key? key}) : super(key: key);
 
@@ -104,8 +105,7 @@ class _WardrobeHomePageState extends State<WardrobeHomePage> {
     if (_errorMessage.isNotEmpty) return Center(child: Text(_errorMessage));
     if (_items.isEmpty) {
       return const Center(
-        child:
-            Text('No items in wardrobe.', style: TextStyle(color: Colors.grey)),
+        child: Text('No items in wardrobe.', style: TextStyle(color: Colors.grey)),
       );
     }
 
@@ -133,23 +133,20 @@ class _WardrobeHomePageState extends State<WardrobeHomePage> {
             borderRadius: BorderRadius.circular(8),
             child: item.imageUrl.isNotEmpty
                 ? (item.imageUrl.startsWith('http')
-                    ? CachedNetworkImage(
-                        imageUrl: item.imageUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) =>
-                            const Center(child: CircularProgressIndicator()),
-                        errorWidget: (context, url, error) =>
-                            const Icon(Icons.broken_image, color: Colors.grey),
-                      )
-                    : Image.file(
-                        File(item.imageUrl),
-                        fit: BoxFit.cover,
-                      ))
+                ? CachedNetworkImage(
+              imageUrl: item.imageUrl,
+              fit: BoxFit.cover,
+              placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+              errorWidget: (context, url, error) => const Icon(Icons.broken_image, color: Colors.grey),
+            )
+                : Image.file(
+              File(item.imageUrl),
+              fit: BoxFit.cover,
+            ))
                 : Container(
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.image_not_supported,
-                        color: Colors.grey),
-                  ),
+              color: Colors.grey[200],
+              child: const Icon(Icons.image_not_supported, color: Colors.grey),
+            ),
           ),
         );
       },
@@ -186,9 +183,7 @@ class _WardrobeHomePageState extends State<WardrobeHomePage> {
           alignment: Alignment.center,
           child: Text(
             label,
-            style: TextStyle(
-                color: sel ? Colors.white : Colors.grey,
-                fontWeight: FontWeight.bold),
+            style: TextStyle(color: sel ? Colors.white : Colors.grey, fontWeight: FontWeight.bold),
           ),
         ),
       ),
@@ -224,9 +219,7 @@ class _WardrobeHomePageState extends State<WardrobeHomePage> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20)),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
                 child: Column(children: [
                   Row(children: const [Spacer(), ThreeDotMenu()]),
                   const SizedBox(height: 10),
@@ -234,16 +227,12 @@ class _WardrobeHomePageState extends State<WardrobeHomePage> {
                     radius: 30,
                     backgroundColor: Colors.teal,
                     child: Text(
-                      displayName.isNotEmpty
-                          ? displayName[0].toUpperCase()
-                          : '',
+                      displayName.isNotEmpty ? displayName[0].toUpperCase() : '',
                       style: const TextStyle(fontSize: 28, color: Colors.white),
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Text(displayName,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 18)),
+                  Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                   const Text('@cylinder', style: TextStyle(color: Colors.grey)),
                   const SizedBox(height: 10),
                   _buildToggle(),
@@ -254,18 +243,17 @@ class _WardrobeHomePageState extends State<WardrobeHomePage> {
               bottom: -30,
               left: 0,
               right: 0,
-              child:
-                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 _interactiveIcon(Icons.bookmark_border, 'Bookmark'),
                 const SizedBox(width: 16),
                 _interactiveIcon(Icons.grid_view, 'Grid'),
                 const SizedBox(width: 16),
-                _interactiveIcon(Icons.bar_chart, 'Stats',
-                    onTap: _navigateToStats),
+                _interactiveIcon(Icons.bar_chart, 'Stats', onTap: _navigateToStats),
               ]),
             ),
           ]),
         ),
+
         const SizedBox(height: 80),
         Expanded(child: _buildGrid()),
       ]),

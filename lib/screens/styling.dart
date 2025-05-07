@@ -1,8 +1,11 @@
-// lib/screens/styling_page.dart
-
 import 'package:flutter/material.dart';
-import 'package:test_app/widgets/custom_bottom_nav.dart'; // Import your custom bottom nav bar
-import 'package:test_app/screens/user_input.dart'; // Import the preferences page
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:test_app/widgets/custom_bottom_nav.dart';
+import 'package:test_app/repositories/clothing_item_repository.dart';
+import 'package:test_app/models/clothing_item_model.dart';
+import 'package:test_app/screens/user_input.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';  
 
 class StylingPage extends StatefulWidget {
   const StylingPage({super.key});
@@ -12,10 +15,11 @@ class StylingPage extends StatefulWidget {
 }
 
 class _StylingPageState extends State<StylingPage> {
-  int _currentIndex = 1; // Bottom Nav selected index
-  int _selectedTab = 0;  // 0 = Dress Me, 1 = Canvas, 2 = Moodboards
-
+  int _currentIndex = 1;
+  int _selectedTab = 0;
   final List<String> _tabs = ['Dress Me', 'Canvas', 'Moodboards'];
+
+  final ClothingItemRepository _clothingRepo = ClothingItemRepository();
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +29,7 @@ class _StylingPageState extends State<StylingPage> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            // Top Tabs with Sliding Indicator
+            // Top Tabs
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: List.generate(_tabs.length, (index) {
@@ -64,7 +68,7 @@ class _StylingPageState extends State<StylingPage> {
               }),
             ),
             const SizedBox(height: 30),
-            // Green Arrow Button
+            // Arrow Button
             Container(
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
@@ -76,13 +80,10 @@ class _StylingPageState extends State<StylingPage> {
               ),
             ),
             const SizedBox(height: 90),
-            // Add Tops
             _buildAddItem('Add Tops'),
             const SizedBox(height: 30),
-            // Add Bottoms
             _buildAddItem('Add Bottoms'),
             const SizedBox(height: 30),
-            // Add Footwear
             _buildAddItem('Add Footwear'),
             const Spacer(),
             // Dress Me Button
@@ -96,8 +97,7 @@ class _StylingPageState extends State<StylingPage> {
                     ),
                   );
                   if (prefs != null) {
-                    // TODO: use the returned preferences map
-                    debugPrint('User Preferences: $prefs');
+                    await _handleDressMePressed(prefs);
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -127,6 +127,120 @@ class _StylingPageState extends State<StylingPage> {
       ),
     );
   }
+
+    Future<void> _handleDressMePressed(Map<String, String> userPrefs) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser!;
+      final userId = user.uid;
+      final items = await _clothingRepo.getUserClothingItems(userId);
+
+      List<ClothingItemModel> topWears = [];
+      List<ClothingItemModel> bottomWears = [];
+      List<ClothingItemModel> footwears = [];
+
+      List<Map<String, String>> topVectors = [];
+      List<Map<String, String>> bottomVectors = [];
+      List<Map<String, String>> footVectors = [];
+
+      for (var item in items) {
+        final vector = <String, String>{};
+
+        if (item.styleTag != null) vector['styleTags'] = item.styleTag!;
+        if (item.moodTag != null) vector['moodTags'] = item.moodTag!;
+        if (item.occasionTag != null) vector['occasionTags'] = item.occasionTag!;
+        if (item.colorTag != null) vector['colorTags'] = item.colorTag!;
+        if (item.fitTag != null) vector['fitTag'] = item.fitTag!;
+        if (item.culturalInfluenceTag != null) {
+          vector['culturalInfluenceTag'] = item.culturalInfluenceTag!;
+        }
+
+        switch (item.wearTypeTag) {
+          case WearType.topWear:
+            topWears.add(item);
+            topVectors.add(vector);
+            break;
+          case WearType.bottomWear:
+            bottomWears.add(item);
+            bottomVectors.add(vector);
+            break;
+          case WearType.footwear:
+            footwears.add(item);
+            footVectors.add(vector);
+            break;
+          default:
+            break;
+        }
+      }
+
+      final response = await http.post(
+        Uri.parse('http://10.0.2.2:8000/recommend'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'user_input': {
+            'styleTags': userPrefs['styleTags'] ?? '',
+            'moodTags': userPrefs['moodTags'] ?? '',
+            'occasionTags': userPrefs['occasionTags'] ?? '',
+            'culturalInfluenceTag': userPrefs['culturalInfluenceTag'] ?? '',
+          },
+          'top_items': topVectors.map((vector) {
+            return {
+              'styleTags': vector['styleTags'],
+              'moodTags': vector['moodTags'],
+              'occasionTags': vector['occasionTags'],
+              'colorTags': vector['colorTags'],
+              'fitTag': vector['fitTag'],
+              'culturalInfluenceTag': vector['culturalInfluenceTag'],
+            };
+          }).toList(),
+          'bottom_items': bottomVectors.map((vector) {
+            return {
+              'styleTags': vector['styleTags'],
+              'moodTags': vector['moodTags'],
+              'occasionTags': vector['occasionTags'],
+              'colorTags': vector['colorTags'],
+              'fitTag': vector['fitTag'],
+              'culturalInfluenceTag': vector['culturalInfluenceTag'],
+            };
+          }).toList(),
+          'foot_items': footVectors.map((vector) {
+            return {
+              'styleTags': vector['styleTags'],
+              'moodTags': vector['moodTags'],
+              'occasionTags': vector['occasionTags'],
+              'colorTags': vector['colorTags'],
+              'fitTag': vector['fitTag'],
+              'culturalInfluenceTag': vector['culturalInfluenceTag'],
+            };
+          }).toList(),
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        if (result["upper_wears"] == null) {
+          debugPrint('Received null result');
+          ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Received null result')),
+          );
+        } else 
+        {
+          debugPrint('Recommendation Response: $result["upper_wears"]');
+        }
+      } else {
+        debugPrint('Server error: ${response.statusCode}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Server error: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error fetching clothing items: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to fetch clothing items.')),
+      );
+    }
+  }
+
+
 
   Widget _buildAddItem(String text) {
     return Column(

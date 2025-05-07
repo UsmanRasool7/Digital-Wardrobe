@@ -17,10 +17,10 @@ class _UserPreferencesPageState extends State<UserPreferencesPage> {
 
   /// Collects the responses in a map
   Map<String, String> get _responses => {
-    'style': _style ?? '',
-    'mood': _mood ?? '',
-    'occasion': _occasion ?? '',
-    'culture': _culture ?? '',
+    'styleTags': _style ?? '',
+    'moodTags': _mood ?? '',
+    'occasionTags': _occasion ?? '',
+    'culturalInfluenceTag': _culture ?? '',
   };
 
   bool get _isComplete {
