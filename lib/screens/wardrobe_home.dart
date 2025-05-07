@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:test_app/screens/statistics.dart';
 
 import '../models/clothing_item_model.dart';
 import '../repositories/clothing_item_repository.dart';
@@ -257,12 +258,15 @@ class _WardrobeHomePageState extends State<WardrobeHomePage> {
               right: 0,
               child:
                   Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                _interactiveIcon(Icons.bookmark_border, 'Bookmark'),
-                const SizedBox(width: 16),
-                _interactiveIcon(Icons.grid_view, 'Grid'),
-                const SizedBox(width: 16),
+
                 _interactiveIcon(Icons.bar_chart, 'Stats',
-                    onTap: _navigateToStats),
+                      onTap: ()
+                      {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (context) => const WardrobeStatsPage()),
+                        );
+                      },
+                )
               ]),
             ),
           ]),
