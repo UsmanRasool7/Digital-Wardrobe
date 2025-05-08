@@ -21,6 +21,8 @@ class StylingPage extends StatefulWidget {
 class _StylingPageState extends State<StylingPage> {
   int _currentIndex = 1;
   int _selectedTab = 0;
+  int _currentOutfitIndex = 0;
+
   final List<String> _tabs = ['Dress Me'];
   final ClothingItemRepository _clothingRepo = ClothingItemRepository();
   final OutfitHistoryRepository _historyRepo = OutfitHistoryRepository();
@@ -36,6 +38,13 @@ class _StylingPageState extends State<StylingPage> {
   ClothingItemModel? _selectedShoes;
 
   double? _currentTemperature;
+
+  int get _totalOutfits => [
+    _recommendedTops.length,
+    _recommendedBottoms.length,
+    _recommendedShoes.length,
+  ].reduce((a, b) => a < b ? a : b); // Get smallest list length
+
 
   Future<void> _fetchCurrentTemperature(String cityName) async {
     const apiKey = '94abe65ce4454ca00732e54f17071b2e'; // Replace with your OpenWeatherMap API key
@@ -102,28 +111,32 @@ class _StylingPageState extends State<StylingPage> {
               const SizedBox(height: 30),
 
               if (_selectedTab == 0) ...[
-                _buildAddItem('Add Tops'),
-                _buildClothingList(
-                  _recommendedTops,
-                  _selectedTop,
-                      (itm) => _selectedTop = itm,
-                ),
-                const SizedBox(height: 20),
 
-                _buildAddItem('Add Bottoms'),
-                _buildClothingList(
-                  _recommendedBottoms,
-                  _selectedBottom,
-                      (itm) => _selectedBottom = itm,
-                ),
-                const SizedBox(height: 20),
-
-                _buildAddItem('Add Footwear'),
-                _buildClothingList(
-                  _recommendedShoes,
-                  _selectedShoes,
-                      (itm) => _selectedShoes = itm,
-                ),
+                _buildOutfitViewer(),
+                // _buildAddItem('Add Tops'),
+                //
+                //
+                // (
+                //   _recommendedTops,
+                //   _selectedTop,
+                //       (itm) => _selectedTop = itm,
+                // ),
+                // const SizedBox(height: 20),
+                //
+                // _buildAddItem('Add Bottoms'),
+                // _buildClothingList(
+                //   _recommendedBottoms,
+                //   _selectedBottom,
+                //       (itm) => _selectedBottom = itm,
+                // ),
+                // const SizedBox(height: 20),
+                //
+                // _buildAddItem('Add Footwear'),
+                // _buildClothingList(
+                //   _recommendedShoes,
+                //   _selectedShoes,
+                //       (itm) => _selectedShoes = itm,
+                // ),
                 const SizedBox(height: 30),
 
                 // Save Outfit Button
@@ -185,13 +198,69 @@ class _StylingPageState extends State<StylingPage> {
     );
   }
 
+  // Future<void> _saveOutfit() async {
+  //   if (_selectedTop == null || _selectedBottom == null || _selectedShoes == null) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Please select top, bottom, and footwear.')),
+  //     );
+  //     return;
+  //   }
+  //
+  //   final user = FirebaseAuth.instance.currentUser!;
+  //   final now = DateTime.now();
+  //
+  //   final history = OutfitHistory(
+  //     id: '', // Firestore will assign
+  //     userId: user.uid,
+  //     createdAt: now,
+  //     top: ClothingItem(
+  //       itemId: _selectedTop!.id,
+  //       colorTag: _selectedTop!.colorTag ?? '',
+  //       fitTag: _selectedTop!.fitTag ?? '',
+  //     ),
+  //     bottom: ClothingItem(
+  //       itemId: _selectedBottom!.id,
+  //       colorTag: _selectedBottom!.colorTag ?? '',
+  //       fitTag: _selectedBottom!.fitTag ?? '',
+  //     ),
+  //     foot: ClothingItem(
+  //       itemId: _selectedShoes!.id,
+  //       colorTag: _selectedShoes!.colorTag ?? '',
+  //       fitTag: _selectedShoes!.fitTag ?? '',
+  //     ),
+  //   );
+  //
+  //   try {
+  //     await _historyRepo.addOutfitHistory(history);
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Outfit saved successfully!')),
+  //     );
+  //     // reset selections and recommendations to "reload" page
+  //     setState(() {
+  //       _selectedTop = null;
+  //       _selectedBottom = null;
+  //       _selectedShoes = null;
+  //       _recommendedTops = [];
+  //       _recommendedBottoms = [];
+  //       _recommendedShoes = [];
+  //     });
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Error saving outfit: \$e')),
+  //     );
+  //   }
+  // }
   Future<void> _saveOutfit() async {
-    if (_selectedTop == null || _selectedBottom == null || _selectedShoes == null) {
+    if (_currentOutfitIndex >= _totalOutfits) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select top, bottom, and footwear.')),
+        const SnackBar(content: Text('No outfit to save.')),
       );
       return;
     }
+
+    final top = _recommendedTops[_currentOutfitIndex];
+    final bottom = _recommendedBottoms[_currentOutfitIndex];
+    final shoes = _recommendedShoes[_currentOutfitIndex];
 
     final user = FirebaseAuth.instance.currentUser!;
     final now = DateTime.now();
@@ -201,19 +270,19 @@ class _StylingPageState extends State<StylingPage> {
       userId: user.uid,
       createdAt: now,
       top: ClothingItem(
-        itemId: _selectedTop!.id,
-        colorTag: _selectedTop!.colorTag ?? '',
-        fitTag: _selectedTop!.fitTag ?? '',
+        itemId: top.id,
+        colorTag: top.colorTag ?? '',
+        fitTag: top.fitTag ?? '',
       ),
       bottom: ClothingItem(
-        itemId: _selectedBottom!.id,
-        colorTag: _selectedBottom!.colorTag ?? '',
-        fitTag: _selectedBottom!.fitTag ?? '',
+        itemId: bottom.id,
+        colorTag: bottom.colorTag ?? '',
+        fitTag: bottom.fitTag ?? '',
       ),
       foot: ClothingItem(
-        itemId: _selectedShoes!.id,
-        colorTag: _selectedShoes!.colorTag ?? '',
-        fitTag: _selectedShoes!.fitTag ?? '',
+        itemId: shoes.id,
+        colorTag: shoes.colorTag ?? '',
+        fitTag: shoes.fitTag ?? '',
       ),
     );
 
@@ -222,60 +291,75 @@ class _StylingPageState extends State<StylingPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Outfit saved successfully!')),
       );
-      // reset selections and recommendations to "reload" page
-      setState(() {
-        _selectedTop = null;
-        _selectedBottom = null;
-        _selectedShoes = null;
-        _recommendedTops = [];
-        _recommendedBottoms = [];
-        _recommendedShoes = [];
-      });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving outfit: \$e')),
+        SnackBar(content: Text('Error saving outfit: $e')),
       );
     }
   }
 
   /// Builds a selectable list. onSelected just assigns the model;
   /// we call setState here so that the highlight updates instantly.
-  Widget _buildClothingList(
-      List<ClothingItemModel> items,
-      ClothingItemModel? selectedItem,
-      void Function(ClothingItemModel) onSelected,
-      ) {
-    if (items.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: Wrap(
-        spacing: 10,
-        runSpacing: 10,
-        children: items.map((item) {
-          final isSel = item == selectedItem;
-          return Material(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-              side: BorderSide(
-                color: isSel ? Colors.blueAccent : Colors.transparent,
-                width: 3,
+  Widget _buildOutfitViewer() {
+    if (_totalOutfits == 0) return const SizedBox.shrink();
+
+    final isAtAddScreen = _currentOutfitIndex == _totalOutfits;
+
+    return Column(
+      children: [
+        if (!isAtAddScreen)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildImageWidget(_recommendedTops[_currentOutfitIndex].imageUrl),
+              _buildImageWidget(_recommendedBottoms[_currentOutfitIndex].imageUrl),
+              _buildImageWidget(_recommendedShoes[_currentOutfitIndex].imageUrl),
+            ],
+          )
+        else
+          Column(
+            children: [
+              ElevatedButton(
+                onPressed: ()=>{},//_addTop
+                child: const Text('Add Top'),
               ),
-            ),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(10),
-              onTap: () {
-                setState(() { onSelected(item); });
-              },
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(7),
-                child: _buildImageWidget(item.imageUrl),
+              ElevatedButton(
+                onPressed: ()=>{},//_addBottom,
+                child: const Text('Add Bottom'),
               ),
+              ElevatedButton(
+                onPressed: ()=>{},//_addFootwear,
+                child: const Text('Add Footwear'),
+              ),
+            ],
+          ),
+        const SizedBox(height: 20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_left, size: 40),
+              onPressed: _currentOutfitIndex > 0
+                  ? () => setState(() => _currentOutfitIndex--)
+                  : null,
             ),
-          );
-        }).toList(),
-      ),
+            Text(
+              isAtAddScreen
+                  ? 'Add a new outfit'
+                  : 'Outfit ${_currentOutfitIndex + 1} of $_totalOutfits',
+            ),
+            IconButton(
+              icon: const Icon(Icons.arrow_right, size: 40),
+              onPressed: _currentOutfitIndex < _totalOutfits
+                  ? () => setState(() => _currentOutfitIndex++)
+                  : null,
+            ),
+          ],
+        ),
+      ],
     );
   }
+
 
   Widget _buildImageWidget(String url) {
     if (url.isEmpty) {
@@ -377,7 +461,7 @@ class _StylingPageState extends State<StylingPage> {
       } else if (_currentTemperature! >= 10) {
         weatherCategory = 'Winter';
       } else {
-        weatherCategory = 'Winter'; 
+        weatherCategory = 'Winter';
       }
 
       final filteredItems = items.where((item) {
@@ -390,7 +474,7 @@ class _StylingPageState extends State<StylingPage> {
       final bottoms = <ClothingItemModel>[];
       final shoes = <ClothingItemModel>[];
 
-  
+
       for (var it in filteredItems) {
         switch (it.wearTypeTag ) {
           case WearType.topWear:
